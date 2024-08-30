@@ -1,15 +1,18 @@
 use std::io;
 
+mod pieces;
+mod board;
+
 #[derive(Debug)]
 enum Player {
     White,
-    Black
+    Black,
 }
 
 enum GameState {
     Playing(Player),
     Won(Player),
-    Draw
+    Draw,
 }
 
 fn other_player(p: Player) -> Player {
@@ -21,6 +24,7 @@ fn other_player(p: Player) -> Player {
 
 fn main() {
     let mut state = GameState::Playing(Player::White);
+    let mut board = board::Board::new();
 
     loop {
         match state {
@@ -32,11 +36,14 @@ fn main() {
                 let next_move = next_move.trim();
 
                 if next_move == "draw" {
-                    println!("draw");
                     state = GameState::Draw;
                 } else if next_move == "resign" {
                     state = GameState::Won(other_player(p));
                 } else {
+                    let file: char = next_move[..1].parse().expect("failed to convert");
+                    let rank: u8 = next_move[1..].parse().expect("failed to convert");
+                    board.place_piece(file, rank);
+                    println!("{board:?}");
                     state = GameState::Playing(other_player(p));
                 }
             }
