@@ -1,0 +1,24 @@
+piece move:
+Ke8
+
+piece capture:
+Kxe8
+
+pawn move:
+e8
+
+pawn capture:
+exd4
+
+disambiguating:
+Rde8
+Nd6f5
+
+castle:
+O-O
+O-O-O
+
+check/mate:
+Qe8+
+Qe8#
+
