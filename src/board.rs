@@ -49,6 +49,12 @@ impl Board {
         self.squares[pos].piece = piece;
         self.squares[pos].player = Some(player);
     }
+
+    fn is_valid_move(&mut self, player: game::Player, piece: pieces::Piece, file: u8, rank: u8) {
+        // get possible "source" squares given the player + piece
+        // check if any instances of given player + piece exist on board
+        // if multiple instances, require disambiguating source position
+    }
 }
 
 impl std::fmt::Display for Board {
@@ -73,8 +79,8 @@ fn convert_square(file: u8, rank: u8) -> usize {
 
 #[derive(Debug, Copy, Clone)]
 pub struct Square {
-    pub piece: pieces::Piece,
-    pub player: Option<game::Player>,
+    piece: pieces::Piece,
+    player: Option<game::Player>,
 }
 
 impl std::fmt::Display for Square {
