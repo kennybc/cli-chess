@@ -1,9 +1,16 @@
 use crate::game;
+use crate::board;
 
-mod pawn;
+pub mod empty;
+pub mod king;
+pub mod queen;
+pub mod rook;
+pub mod bishop;
+pub mod knight;
+pub mod pawn;
 
 #[derive(Debug, Copy, Clone)]
-pub enum Piece {
+pub enum PieceType {
     Empty,
     King,
     Queen,
@@ -13,40 +20,32 @@ pub enum Piece {
     Pawn,
 }
 
-impl Into<char> for Piece {
+pub trait Piece: std::fmt::Display {
+    fn get_type(&self) -> PieceType;
+    fn can_move(&self, board: board::Board, file: u8, rank: u8) -> bool;
+}
+
+pub struct Position {
+    pub player: game::Player,
+    pub file: u8,
+    pub rank: u8,
+}
+
+impl Into<char> for PieceType {
     fn into(self) -> char {
         self as u8 as char
     }
 }
 
-impl From<char> for Piece {
-    fn from(c: char) -> Piece {
+impl From<char> for PieceType {
+    fn from(c: char) -> PieceType {
         match c {
-            'k' => Piece::King,
-            'q' => Piece::Queen,
-            'r' => Piece::Rook,
-            'b' => Piece::Bishop,
-            'n' => Piece::Knight,
-            _ => Piece::Pawn,
+            'k' => PieceType::King,
+            'q' => PieceType::Queen,
+            'r' => PieceType::Rook,
+            'b' => PieceType::Bishop,
+            'n' => PieceType::Knight,
+            _ => PieceType::Pawn,
         }
-    }
-}
-
-pub fn can_move(
-    player: game::Player,
-    piece: Piece,
-    src_file: u8,
-    src_rank: u8,
-    dst_file: u8,
-    dst_rank: u8
-) -> bool {
-    match piece {
-        Piece::King => false,
-        Piece::Queen => false,
-        Piece::Rook => false,
-        Piece::Bishop => false,
-        Piece::Knight => false,
-        Piece::Pawn => pawn::can_move(player, src_file, src_rank, dst_file, dst_rank),
-        Piece::Empty => false,
     }
 }

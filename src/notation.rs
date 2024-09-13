@@ -8,13 +8,13 @@ fn get_char(notation: &str, index: usize) -> char {
         .to_ascii_lowercase();
 }
 
-pub fn parse_notation(notation: &str) -> (pieces::Piece, u8, u8) {
+pub fn parse_notation(notation: &str) -> (pieces::PieceType, u8, u8) {
     let mut pos_begin_index = 1;
 
     // get the piece type from notation
-    let piece: pieces::Piece = pieces::Piece::from(get_char(notation, 0));
+    let piece: pieces::PieceType = pieces::PieceType::from(get_char(notation, 0));
 
-    if let pieces::Piece::Pawn = piece {
+    if let pieces::PieceType::Pawn = piece {
         pos_begin_index = 0;
     }
 
