@@ -11,18 +11,31 @@ impl pieces::Piece for Pawn {
         return pieces::PieceType::Pawn;
     }
 
-    fn can_move(&self, board: board::Board, file: u8, rank: u8) -> bool {
+    fn can_move(&self, board: &board::Board, file: u8, rank: u8) -> bool {
         let target = &board.squares[board::convert_square(file, rank)];
 
-        match self.pos.player {
-            game::Player::White => {
-                if file == self.pos.file {
-                    if rank == 4 && self.pos.rank == 2 {
-                        return true;
-                    }
+        // pawn move within same file (non-capture move)
+        if file == self.pos.file {
+            // target position already occupied
+            if let pieces::PieceType::Empty = target.get_type() {
+            } else {
+                return false;
+            }
+
+            // allow one one square forwards
+            // first move allow two squares forwards
+            let diff: i8 = (rank as i8) - (self.pos.rank as i8);
+            let other = self.pos.rank;
+            println!("src: {other}");
+            println!("dst: {rank}");
+            match self.pos.player {
+                game::Player::White => {
+                    return diff == 1 || (rank == 3 && self.pos.rank == 1);
+                }
+                game::Player::Black => {
+                    return diff == -1 || (rank == 5 && self.pos.rank == 7);
                 }
             }
-            game::Player::Black => {}
         }
 
         return false;

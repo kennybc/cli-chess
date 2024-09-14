@@ -22,21 +22,17 @@ pub enum PieceType {
 
 pub trait Piece: std::fmt::Display {
     fn get_type(&self) -> PieceType;
-    fn can_move(&self, board: board::Board, file: u8, rank: u8) -> bool;
+    fn can_move(&self, board: &board::Board, file: u8, rank: u8) -> bool;
 }
 
+#[derive(Copy, Clone)]
 pub struct Position {
     pub player: game::Player,
     pub file: u8,
     pub rank: u8,
 }
 
-impl Into<char> for PieceType {
-    fn into(self) -> char {
-        self as u8 as char
-    }
-}
-
+// allow inference from char (for notation parsing)
 impl From<char> for PieceType {
     fn from(c: char) -> PieceType {
         match c {

@@ -8,7 +8,7 @@ impl pieces::Piece for Empty {
         return pieces::PieceType::Empty;
     }
 
-    fn can_move(&self, _: board::Board, _: u8, _: u8) -> bool {
+    fn can_move(&self, _: &board::Board, _: u8, _: u8) -> bool {
         return false;
     }
 }

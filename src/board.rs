@@ -48,6 +48,7 @@ impl Board {
         }
     }
 
+    // place a piece regardless of move validity
     pub fn place_piece(
         &mut self,
         player: game::Player,
@@ -56,23 +57,28 @@ impl Board {
         rank: u8
     ) {
         let pos = pieces::Position { player, file, rank };
-        let piece = match piece_type {
-            pieces::PieceType::King =>
-                Box::new(pieces::king::King { pos }) as Box<dyn pieces::Piece>,
-            pieces::PieceType::Queen =>
-                Box::new(pieces::queen::Queen { pos }) as Box<dyn pieces::Piece>,
-            pieces::PieceType::Rook =>
-                Box::new(pieces::rook::Rook { pos }) as Box<dyn pieces::Piece>,
-            pieces::PieceType::Bishop =>
-                Box::new(pieces::bishop::Bishop { pos }) as Box<dyn pieces::Piece>,
-            pieces::PieceType::Knight =>
-                Box::new(pieces::knight::Knight { pos }) as Box<dyn pieces::Piece>,
-            pieces::PieceType::Pawn =>
-                Box::new(pieces::pawn::Pawn { pos }) as Box<dyn pieces::Piece>,
-            pieces::PieceType::Empty => Box::new(pieces::empty::Empty {}) as Box<dyn pieces::Piece>,
-        };
         let index = convert_square(file, rank);
-        self.squares[index] = piece;
+        self.squares[index] = new_boxed_piece(piece_type, pos);
+    }
+
+    pub fn move_piece(
+        &mut self,
+        player: game::Player,
+        piece_type: pieces::PieceType,
+        src_file: u8,
+        src_rank: u8,
+        dst_file: u8,
+        dst_rank: u8
+    ) {
+        let pos = pieces::Position { player, file: dst_file, rank: dst_rank };
+        let src_index = convert_square(src_file, src_rank);
+        let dst_index = convert_square(dst_file, dst_rank);
+        if self.squares[src_index].can_move(self, dst_file, dst_rank) {
+            self.squares[src_index] = new_boxed_piece(pieces::PieceType::Empty, pos);
+            self.squares[dst_index] = new_boxed_piece(piece_type, pos);
+        } else {
+            println!("invalid move!")
+        }
     }
 
     fn is_valid_move(
@@ -106,4 +112,22 @@ impl std::fmt::Display for Board {
 // convert a file and rank to a square index on a 1d board array
 pub fn convert_square(file: u8, rank: u8) -> usize {
     return (8 * (7 - rank) + file) as usize;
+}
+
+pub fn new_boxed_piece(
+    piece_type: pieces::PieceType,
+    pos: pieces::Position
+) -> Box<dyn pieces::Piece> {
+    match piece_type {
+        pieces::PieceType::King => Box::new(pieces::king::King { pos }) as Box<dyn pieces::Piece>,
+        pieces::PieceType::Queen =>
+            Box::new(pieces::queen::Queen { pos }) as Box<dyn pieces::Piece>,
+        pieces::PieceType::Rook => Box::new(pieces::rook::Rook { pos }) as Box<dyn pieces::Piece>,
+        pieces::PieceType::Bishop =>
+            Box::new(pieces::bishop::Bishop { pos }) as Box<dyn pieces::Piece>,
+        pieces::PieceType::Knight =>
+            Box::new(pieces::knight::Knight { pos }) as Box<dyn pieces::Piece>,
+        pieces::PieceType::Pawn => Box::new(pieces::pawn::Pawn { pos }) as Box<dyn pieces::Piece>,
+        pieces::PieceType::Empty => Box::new(pieces::empty::Empty {}) as Box<dyn pieces::Piece>,
+    }
 }

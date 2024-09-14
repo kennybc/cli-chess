@@ -11,7 +11,7 @@ impl pieces::Piece for Rook {
         return pieces::PieceType::Rook;
     }
 
-    fn can_move(&self, board: board::Board, file: u8, rank: u8) -> bool {
+    fn can_move(&self, board: &board::Board, file: u8, rank: u8) -> bool {
         return false;
     }
 }
