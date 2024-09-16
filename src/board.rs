@@ -1,3 +1,4 @@
+use crate::notation;
 use crate::pieces;
 use crate::game;
 
@@ -57,33 +58,38 @@ impl Board {
         file: u8,
         rank: u8
     ) {
-        let pos = pieces::PiecePosition { player, file, rank };
         let index = convert_position_1d(file, rank);
-        self.squares[index] = new_boxed_piece(piece_type, pos);
+        self.squares[index] = new_boxed_piece(player, piece_type, file, rank);
     }
 
-    pub fn move_piece(
-        &mut self,
-        player: game::Player,
-        piece_type: pieces::PieceType,
-        piece_move: pieces::PieceMove
-    ) {
-        let pos = pieces::PiecePosition {
-            player,
-            file: piece_move.dst_file,
-            rank: piece_move.dst_rank,
-        };
-        let src_index = convert_position_1d(piece_move.src_file, piece_move.src_rank);
-        let dst_index = convert_position_1d(piece_move.dst_file, piece_move.dst_rank);
-        if self.squares[src_index].can_move(self, pos) {
-            self.squares[src_index] = new_boxed_piece(pieces::PieceType::Empty, pos);
-            self.squares[dst_index] = new_boxed_piece(piece_type, pos);
+    // clear a square
+    pub fn clear_square(&mut self, file: u8, rank: u8) {
+        let index = convert_position_1d(file, rank);
+        self.squares[index] = Box::new(pieces::empty::Empty {}) as Box<dyn pieces::Piece>;
+    }
+
+    pub fn execute_move(&mut self, player: game::Player, notation: &str) {
+        if notation == "O-O" {
+        } else if notation == "O-O-O" {
         } else {
-            println!("invalid move!")
+            let piece_move = notation::parse_notation(notation);
+            let src_index = convert_position_1d(piece_move.src_file, piece_move.src_rank);
+            let dst_index = convert_position_1d(piece_move.dst_file, piece_move.dst_rank);
+            if self.squares[src_index].can_move(self, piece_move.dst_file, piece_move.dst_rank) {
+                self.clear_square(piece_move.src_file, piece_move.src_rank);
+                self.squares[dst_index] = new_boxed_piece(
+                    player,
+                    piece_move.piece_type,
+                    piece_move.dst_file,
+                    piece_move.dst_rank
+                );
+            } else {
+                println!("invalid move!")
+            }
         }
     }
 
-    fn is_valid_move(
+    /*fn is_valid_move(
         &mut self,
         player: game::Player,
         piece: pieces::PieceType,
@@ -93,7 +99,38 @@ impl Board {
         // get possible "source" squares given the player + piece
         // check if any instances of given player + piece exist on board
         // if multiple instances, require disambiguating source position
+    }*/
+
+    // can a player castle king side?
+    fn can_king_castle(&mut self, player: game::Player) -> bool {
+        let rank = match player {
+            game::Player::White => 0,
+            game::Player::Black => 7,
+        };
+        let king_index = convert_position_1d(4, rank);
+        let rook_index = convert_position_1d(7, rank);
+        if let pieces::PieceType::King = self.squares[king_index].get_type() {
+            if let pieces::PieceType::Rook = self.squares[rook_index].get_type() {
+                // ensure squares between king and rook are empty
+                for i in 5..7 {
+                    if
+                        let pieces::PieceType::Empty =
+                            self.squares[convert_position_1d(i, rank)].get_type()
+                    {
+                    } else {
+                        return false;
+                    }
+                }
+            }
+        }
+        return false;
     }
+
+    // can a player castle queen side?
+    fn can_queen_castle(&mut self, player: game::Player) {}
+
+    // is a square under attack?
+    fn is_under_attack(&mut self, file: u8, rank: u8) {}
 }
 
 impl std::fmt::Display for Board {
@@ -117,22 +154,34 @@ pub fn convert_position_1d(file: u8, rank: u8) -> usize {
 }
 
 pub fn new_boxed_piece(
+    player: game::Player,
     piece_type: pieces::PieceType,
-    pos: pieces::PiecePosition
+    file: u8,
+    rank: u8
 ) -> Box<dyn pieces::Piece> {
-    match piece_type {
-        pieces::PieceType::King =>
-            Box::new(pieces::king::King { pos, last_move: None }) as Box<dyn pieces::Piece>,
-        pieces::PieceType::Queen =>
-            Box::new(pieces::queen::Queen { pos, last_move: None }) as Box<dyn pieces::Piece>,
-        pieces::PieceType::Rook =>
-            Box::new(pieces::rook::Rook { pos, last_move: None }) as Box<dyn pieces::Piece>,
-        pieces::PieceType::Bishop =>
-            Box::new(pieces::bishop::Bishop { pos, last_move: None }) as Box<dyn pieces::Piece>,
-        pieces::PieceType::Knight =>
-            Box::new(pieces::knight::Knight { pos, last_move: None }) as Box<dyn pieces::Piece>,
-        pieces::PieceType::Pawn =>
-            Box::new(pieces::pawn::Pawn { pos, last_move: None }) as Box<dyn pieces::Piece>,
-        pieces::PieceType::Empty => Box::new(pieces::empty::Empty {}) as Box<dyn pieces::Piece>,
+    if let pieces::PieceType::Empty = piece_type {
+        return Box::new(pieces::empty::Empty {}) as Box<dyn pieces::Piece>;
+    } else {
+        let piece_data: pieces::PieceData = pieces::PieceData {
+            player,
+            file,
+            rank,
+            last_move: None,
+        };
+        match piece_type {
+            pieces::PieceType::King =>
+                Box::new(pieces::king::King::new(piece_data)) as Box<dyn pieces::Piece>,
+            pieces::PieceType::Queen =>
+                Box::new(pieces::queen::Queen::new(piece_data)) as Box<dyn pieces::Piece>,
+            pieces::PieceType::Rook =>
+                Box::new(pieces::rook::Rook::new(piece_data)) as Box<dyn pieces::Piece>,
+            pieces::PieceType::Bishop =>
+                Box::new(pieces::bishop::Bishop::new(piece_data)) as Box<dyn pieces::Piece>,
+            pieces::PieceType::Knight =>
+                Box::new(pieces::knight::Knight::new(piece_data)) as Box<dyn pieces::Piece>,
+            pieces::PieceType::Pawn =>
+                Box::new(pieces::pawn::Pawn::new(piece_data)) as Box<dyn pieces::Piece>,
+            pieces::PieceType::Empty => Box::new(pieces::empty::Empty {}) as Box<dyn pieces::Piece>,
+        }
     }
 }

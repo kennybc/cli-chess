@@ -10,6 +10,7 @@ pub mod knight;
 pub mod pawn;
 
 pub struct PieceMove {
+    pub piece_type: PieceType,
     pub src_file: u8,
     pub src_rank: u8,
     pub dst_file: u8,
@@ -27,19 +28,6 @@ pub enum PieceType {
     Pawn,
 }
 
-pub trait Piece: std::fmt::Display {
-    fn get_type(&self) -> PieceType;
-    fn can_move(&self, board: &board::Board, pos: PiecePosition) -> bool;
-    fn get_last_move(&self) -> Option<&PieceMove>;
-}
-
-#[derive(Copy, Clone)]
-pub struct PiecePosition {
-    pub player: game::Player,
-    pub file: u8,
-    pub rank: u8,
-}
-
 // allow inference from char (for notation parsing)
 impl From<char> for PieceType {
     fn from(c: char) -> PieceType {
@@ -52,4 +40,17 @@ impl From<char> for PieceType {
             _ => PieceType::Pawn,
         }
     }
+}
+
+pub trait Piece: std::fmt::Display {
+    fn get_type(&self) -> PieceType;
+    fn can_move(&self, board: &board::Board, file: u8, rank: u8) -> bool;
+    fn get_last_move(&self) -> Option<&PieceMove>;
+}
+
+pub struct PieceData {
+    pub player: game::Player,
+    pub file: u8,
+    pub rank: u8,
+    pub last_move: Option<PieceMove>,
 }

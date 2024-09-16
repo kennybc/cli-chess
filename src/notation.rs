@@ -8,13 +8,13 @@ fn get_char(notation: &str, index: usize) -> char {
         .to_ascii_lowercase();
 }
 
-pub fn parse_notation(notation: &str) -> (pieces::PieceType, u8, u8) {
+pub fn parse_notation(notation: &str) -> pieces::PieceMove {
     let mut pos_begin_index = 1;
 
     // get the piece type from notation
-    let piece: pieces::PieceType = pieces::PieceType::from(get_char(notation, 0));
+    let piece_type: pieces::PieceType = pieces::PieceType::from(get_char(notation, 0));
 
-    if let pieces::PieceType::Pawn = piece {
+    if let pieces::PieceType::Pawn = piece_type {
         pos_begin_index = 0;
     }
 
@@ -34,9 +34,15 @@ pub fn parse_notation(notation: &str) -> (pieces::PieceType, u8, u8) {
                 .expect("invalid rank") as u8
         ) - 1;
 
-    println!("piece: {piece:?}, file: {file}, rank: {rank}");
+    println!("piece: {piece_type:?}, file: {file}, rank: {rank}");
 
-    return (piece, file, rank);
+    return pieces::PieceMove {
+        piece_type,
+        src_file: file,
+        src_rank: rank,
+        dst_file: file,
+        dst_rank: rank,
+    };
 }
 
 // convert a file (a-h) to an integer (0-8)

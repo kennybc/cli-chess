@@ -43,9 +43,9 @@ pub fn game_loop() {
                 } else if next_move == "resign" {
                     state = GameState::Won(other_player(p));
                 } else {
-                    let (piece, file, rank) = notation::parse_notation(&next_move);
+                    //let (piece, file, rank) = notation::parse_notation(&next_move);
                     //board.move_piece(p, pieces::PieceType::Pawn, 4, 1, 4, 3);
-                    board.place_piece(p, piece, file, rank);
+                    //board.place_piece(p, piece, file, rank);
                     println!("{board}");
                     state = GameState::Playing(other_player(p));
                 }
