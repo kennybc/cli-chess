@@ -1,6 +1,5 @@
 use std::io;
 
-use crate::pieces;
 use crate::board;
 use crate::notation;
 

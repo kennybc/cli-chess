@@ -16,7 +16,7 @@ pub struct PieceMove {
     pub dst_rank: u8,
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub enum PieceType {
     Empty,
     King,

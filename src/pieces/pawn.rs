@@ -25,15 +25,15 @@ impl pieces::Piece for Pawn {
 
             // allow one one square forwards
             // first move allow two squares forwards
-            let diff: i8 = (pos.rank as i8) - (self.pos.rank as i8);
-            match self.pos.player {
-                game::Player::White => {
-                    return diff == 1 || (pos.rank == 3 && self.pos.rank == 1);
-                }
-                game::Player::Black => {
-                    return diff == -1 || (pos.rank == 5 && self.pos.rank == 7);
-                }
-            }
+            let multiplier: i8 = match self.pos.player {
+                game::Player::White => 1,
+                game::Player::Black => -1,
+            };
+            let diff: i8 = ((pos.rank as i8) - (self.pos.rank as i8)) * multiplier;
+            return match self.last_move {
+                None => diff == 1 || diff == 2,
+                Some(_) => diff == 1,
+            };
         }
 
         return false;
