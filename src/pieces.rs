@@ -9,6 +9,13 @@ pub mod bishop;
 pub mod knight;
 pub mod pawn;
 
+pub struct PieceMove {
+    pub src_file: u8,
+    pub src_rank: u8,
+    pub dst_file: u8,
+    pub dst_rank: u8,
+}
+
 #[derive(Debug, Copy, Clone)]
 pub enum PieceType {
     Empty,
@@ -22,11 +29,12 @@ pub enum PieceType {
 
 pub trait Piece: std::fmt::Display {
     fn get_type(&self) -> PieceType;
-    fn can_move(&self, board: &board::Board, file: u8, rank: u8) -> bool;
+    fn can_move(&self, board: &board::Board, pos: PiecePosition) -> bool;
+    fn get_last_move(&self) -> Option<&PieceMove>;
 }
 
 #[derive(Copy, Clone)]
-pub struct Position {
+pub struct PiecePosition {
     pub player: game::Player,
     pub file: u8,
     pub rank: u8,

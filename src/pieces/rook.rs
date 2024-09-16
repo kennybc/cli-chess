@@ -3,7 +3,8 @@ use crate::pieces;
 use crate::board;
 
 pub struct Rook {
-    pub pos: pieces::Position,
+    pub pos: pieces::PiecePosition,
+    pub last_move: Option<pieces::PieceMove>,
 }
 
 impl pieces::Piece for Rook {
@@ -11,8 +12,12 @@ impl pieces::Piece for Rook {
         return pieces::PieceType::Rook;
     }
 
-    fn can_move(&self, board: &board::Board, file: u8, rank: u8) -> bool {
+    fn can_move(&self, board: &board::Board, pos: pieces::PiecePosition) -> bool {
         return false;
+    }
+
+    fn get_last_move(&self) -> Option<&pieces::PieceMove> {
+        return self.last_move.as_ref();
     }
 }
 

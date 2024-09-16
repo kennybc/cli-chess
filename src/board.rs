@@ -1,6 +1,5 @@
 use crate::pieces;
 use crate::game;
-use crate::pieces::Position;
 
 pub struct Board {
     pub squares: [Box<dyn pieces::Piece>; 64],
@@ -49,6 +48,8 @@ impl Board {
     }
 
     // place a piece regardless of move validity
+    // does not update pieces' move history
+    // usage: initializing/resetting the board
     pub fn place_piece(
         &mut self,
         player: game::Player,
@@ -56,8 +57,8 @@ impl Board {
         file: u8,
         rank: u8
     ) {
-        let pos = pieces::Position { player, file, rank };
-        let index = convert_square(file, rank);
+        let pos = pieces::PiecePosition { player, file, rank };
+        let index = convert_position_1d(file, rank);
         self.squares[index] = new_boxed_piece(piece_type, pos);
     }
 
@@ -65,15 +66,16 @@ impl Board {
         &mut self,
         player: game::Player,
         piece_type: pieces::PieceType,
-        src_file: u8,
-        src_rank: u8,
-        dst_file: u8,
-        dst_rank: u8
+        piece_move: pieces::PieceMove
     ) {
-        let pos = pieces::Position { player, file: dst_file, rank: dst_rank };
-        let src_index = convert_square(src_file, src_rank);
-        let dst_index = convert_square(dst_file, dst_rank);
-        if self.squares[src_index].can_move(self, dst_file, dst_rank) {
+        let pos = pieces::PiecePosition {
+            player,
+            file: piece_move.dst_file,
+            rank: piece_move.dst_rank,
+        };
+        let src_index = convert_position_1d(piece_move.src_file, piece_move.src_rank);
+        let dst_index = convert_position_1d(piece_move.dst_file, piece_move.dst_rank);
+        if self.squares[src_index].can_move(self, pos) {
             self.squares[src_index] = new_boxed_piece(pieces::PieceType::Empty, pos);
             self.squares[dst_index] = new_boxed_piece(piece_type, pos);
         } else {
@@ -110,24 +112,27 @@ impl std::fmt::Display for Board {
 }
 
 // convert a file and rank to a square index on a 1d board array
-pub fn convert_square(file: u8, rank: u8) -> usize {
+pub fn convert_position_1d(file: u8, rank: u8) -> usize {
     return (8 * (7 - rank) + file) as usize;
 }
 
 pub fn new_boxed_piece(
     piece_type: pieces::PieceType,
-    pos: pieces::Position
+    pos: pieces::PiecePosition
 ) -> Box<dyn pieces::Piece> {
     match piece_type {
-        pieces::PieceType::King => Box::new(pieces::king::King { pos }) as Box<dyn pieces::Piece>,
+        pieces::PieceType::King =>
+            Box::new(pieces::king::King { pos, last_move: None }) as Box<dyn pieces::Piece>,
         pieces::PieceType::Queen =>
-            Box::new(pieces::queen::Queen { pos }) as Box<dyn pieces::Piece>,
-        pieces::PieceType::Rook => Box::new(pieces::rook::Rook { pos }) as Box<dyn pieces::Piece>,
+            Box::new(pieces::queen::Queen { pos, last_move: None }) as Box<dyn pieces::Piece>,
+        pieces::PieceType::Rook =>
+            Box::new(pieces::rook::Rook { pos, last_move: None }) as Box<dyn pieces::Piece>,
         pieces::PieceType::Bishop =>
-            Box::new(pieces::bishop::Bishop { pos }) as Box<dyn pieces::Piece>,
+            Box::new(pieces::bishop::Bishop { pos, last_move: None }) as Box<dyn pieces::Piece>,
         pieces::PieceType::Knight =>
-            Box::new(pieces::knight::Knight { pos }) as Box<dyn pieces::Piece>,
-        pieces::PieceType::Pawn => Box::new(pieces::pawn::Pawn { pos }) as Box<dyn pieces::Piece>,
+            Box::new(pieces::knight::Knight { pos, last_move: None }) as Box<dyn pieces::Piece>,
+        pieces::PieceType::Pawn =>
+            Box::new(pieces::pawn::Pawn { pos, last_move: None }) as Box<dyn pieces::Piece>,
         pieces::PieceType::Empty => Box::new(pieces::empty::Empty {}) as Box<dyn pieces::Piece>,
     }
 }
