@@ -1,7 +1,6 @@
 #[cfg(test)]
 mod tests {
     use crate::board;
-    use crate::game;
     use crate::pieces;
 
     // test forward movement

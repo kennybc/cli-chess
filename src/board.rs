@@ -55,24 +55,44 @@ impl Board {
         &mut self,
         player: game::Player,
         piece_type: pieces::PieceType,
-        file: u8,
-        rank: u8
+        file: i8,
+        rank: i8
     ) {
         let index = convert_position_1d(file, rank);
         self.squares[index] = new_boxed_piece(player, piece_type, file, rank);
     }
 
     // clear a square
-    pub fn clear_square(&mut self, file: u8, rank: u8) {
+    pub fn clear_square(&mut self, file: i8, rank: i8) {
         let index = convert_position_1d(file, rank);
         self.squares[index] = Box::new(pieces::empty::Empty {}) as Box<dyn pieces::Piece>;
     }
 
     pub fn execute_move(&mut self, player: game::Player, notation: &str) {
-        if notation == "O-O" {
-        } else if notation == "O-O-O" {
+        // handle "special" castling notation first
+        if notation == "O-O" || notation == "O-O-O" {
+            let castle_rank = match player {
+                game::Player::White => 0,
+                game::Player::Black => 7,
+            };
+            // king side castle
+            if notation == "O-O" && self.can_king_castle(castle_rank) {
+                self.place_piece(player, pieces::PieceType::King, 6, castle_rank);
+                self.place_piece(player, pieces::PieceType::Rook, 5, castle_rank);
+                self.clear_square(4, castle_rank);
+                self.clear_square(7, castle_rank);
+            }
+            // queen side castle
+            if notation == "O-O-O" && self.can_queen_castle(castle_rank) {
+                self.place_piece(player, pieces::PieceType::King, 2, castle_rank);
+                self.place_piece(player, pieces::PieceType::Rook, 3, castle_rank);
+                self.clear_square(4, castle_rank);
+                self.clear_square(0, castle_rank);
+            }
         } else {
-            let piece_move = notation::parse_notation(notation);
+            let piece_move = notation
+                ::parse_notation(self, &player, notation)
+                .expect("invalid move");
             let src_index = convert_position_1d(piece_move.src_file, piece_move.src_rank);
             let dst_index = convert_position_1d(piece_move.dst_file, piece_move.dst_rank);
             if self.squares[src_index].can_move(self, piece_move.dst_file, piece_move.dst_rank) {
@@ -93,44 +113,62 @@ impl Board {
         &mut self,
         player: game::Player,
         piece: pieces::PieceType,
-        file: u8,
-        rank: u8
+        file: i8,
+        rank: i8
     ) {
         // get possible "source" squares given the player + piece
         // check if any instances of given player + piece exist on board
         // if multiple instances, require disambiguating source position
     }*/
 
-    // can a player castle king side?
-    fn can_king_castle(&mut self, player: game::Player) -> bool {
-        let rank = match player {
-            game::Player::White => 0,
-            game::Player::Black => 7,
-        };
-        let king_index = convert_position_1d(4, rank);
-        let rook_index = convert_position_1d(7, rank);
-        if let pieces::PieceType::King = self.squares[king_index].get_type() {
-            if let pieces::PieceType::Rook = self.squares[rook_index].get_type() {
-                // ensure squares between king and rook are empty
-                for i in 5..7 {
-                    if
-                        let pieces::PieceType::Empty =
-                            self.squares[convert_position_1d(i, rank)].get_type()
-                    {
-                    } else {
-                        return false;
-                    }
+    // is a square under attack?
+    fn is_under_attack(&mut self, file: i8, rank: i8) -> bool {
+        return false;
+    }
+
+    // check if a player can castle (helper)
+    fn can_castle(&mut self, castle_rank: i8, rook_file: i8) -> bool {
+        let king_index = convert_position_1d(4, castle_rank);
+        let rook_index = convert_position_1d(rook_file, castle_rank);
+
+        // check if king and rook are in place
+        if
+            self.squares[king_index].get_type() == pieces::PieceType::King &&
+            self.squares[rook_index].get_type() == pieces::PieceType::Rook
+        {
+            // ensure squares between king and rook are empty
+            let castle_path = if rook_file == 0 { 1..4 } else { 5..7 };
+            for i in castle_path {
+                if
+                    self.squares[convert_position_1d(i, castle_rank)].get_type() !=
+                    pieces::PieceType::Empty
+                {
+                    return false;
                 }
+            }
+
+            // ensure that king will not pass through check during castle
+            let king_path = if rook_file == 0 { 2..5 } else { 4..7 };
+            for i in king_path {
+                if self.is_under_attack(i, castle_rank) {
+                    return false;
+                }
+
+                return true;
             }
         }
         return false;
     }
 
-    // can a player castle queen side?
-    fn can_queen_castle(&mut self, player: game::Player) {}
+    // can a player castle king side?
+    fn can_king_castle(&mut self, castle_rank: i8) -> bool {
+        return self.can_castle(castle_rank, 7);
+    }
 
-    // is a square under attack?
-    fn is_under_attack(&mut self, file: u8, rank: u8) {}
+    // can a player castle queen side?
+    fn can_queen_castle(&mut self, castle_rank: i8) -> bool {
+        return self.can_castle(castle_rank, 0);
+    }
 }
 
 impl std::fmt::Display for Board {
@@ -139,7 +177,7 @@ impl std::fmt::Display for Board {
         for (i, piece) in self.squares.iter().enumerate() {
             board_string += &piece.to_string();
             board_string += " ";
-            let col = (i as u8) % 8;
+            let col = i % 8;
             if col == 7 {
                 board_string += "\n";
             }
@@ -149,15 +187,15 @@ impl std::fmt::Display for Board {
 }
 
 // convert a file and rank to a square index on a 1d board array
-pub fn convert_position_1d(file: u8, rank: u8) -> usize {
+pub fn convert_position_1d(file: i8, rank: i8) -> usize {
     return (8 * (7 - rank) + file) as usize;
 }
 
 pub fn new_boxed_piece(
     player: game::Player,
     piece_type: pieces::PieceType,
-    file: u8,
-    rank: u8
+    file: i8,
+    rank: i8
 ) -> Box<dyn pieces::Piece> {
     if let pieces::PieceType::Empty = piece_type {
         return Box::new(pieces::empty::Empty {}) as Box<dyn pieces::Piece>;

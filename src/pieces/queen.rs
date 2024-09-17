@@ -15,11 +15,19 @@ impl Queen {
 }
 
 impl pieces::Piece for Queen {
+    fn get_player(&self) -> Option<game::Player> {
+        return Some(self.data.player);
+    }
+
     fn get_type(&self) -> pieces::PieceType {
         return pieces::PieceType::Queen;
     }
 
-    fn can_move(&self, board: &board::Board, file: u8, rank: u8) -> bool {
+    fn can_capture(&self, board: &board::Board, file: i8, rank: i8) -> bool {
+        return false;
+    }
+
+    fn can_move(&self, board: &board::Board, file: i8, rank: i8) -> bool {
         return false;
     }
 

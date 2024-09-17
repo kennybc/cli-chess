@@ -1,9 +1,7 @@
 use std::io;
-
 use crate::board;
-use crate::notation;
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub enum Player {
     White,
     Black,
