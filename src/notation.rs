@@ -68,9 +68,11 @@ pub fn parse_notation(
     // get all potential pieces that could make this move
     let candidates = get_piece_candidates(board, player, &piece_type, file, rank);
     if candidates.len() == 0 {
+        println!("no valid candidates");
         return Err(());
     }
     for candidate in candidates {
+        println!("candidate: {candidate:?}");
         // todo
     }
 

@@ -21,7 +21,7 @@ impl Board {
             self.squares[i] = Box::new(pieces::empty::Empty {}) as Box<dyn pieces::Piece>;
         }
 
-        // white pieces
+        /*// white pieces
         self.place_piece(game::Player::White, pieces::PieceType::Rook, 0, 0);
         self.place_piece(game::Player::White, pieces::PieceType::Knight, 1, 0);
         self.place_piece(game::Player::White, pieces::PieceType::Bishop, 2, 0);
@@ -45,7 +45,12 @@ impl Board {
         self.place_piece(game::Player::Black, pieces::PieceType::Rook, 7, 7);
         for i in 0..8 {
             self.place_piece(game::Player::Black, pieces::PieceType::Pawn, i, 6);
-        }
+        }*/
+
+        self.place_piece(game::Player::Black, pieces::PieceType::Knight, 0, 0);
+        self.place_piece(game::Player::Black, pieces::PieceType::Knight, 0, 2);
+        self.place_piece(game::Player::Black, pieces::PieceType::Knight, 4, 0);
+        self.place_piece(game::Player::White, pieces::PieceType::Knight, 4, 2);
     }
 
     // place a piece regardless of move validity

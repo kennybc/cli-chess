@@ -1,5 +1,6 @@
 use std::io;
 use crate::board;
+use crate::notation;
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum Player {
@@ -41,7 +42,7 @@ pub fn game_loop() {
                 } else if next_move == "resign" {
                     state = GameState::Won(other_player(p));
                 } else {
-                    //let (piece, file, rank) = notation::parse_notation(&next_move);
+                    let m = notation::parse_notation(&board, &p, &next_move).expect("");
                     //board.move_piece(p, pieces::PieceType::Pawn, 4, 1, 4, 3);
                     //board.place_piece(p, piece, file, rank);
                     println!("{board}");
