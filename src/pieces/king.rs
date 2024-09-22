@@ -24,7 +24,13 @@ impl pieces::Piece for King {
     }
 
     fn can_move(&self, board: &board::Board, file: i8, rank: i8) -> bool {
-        return false;
+        if board.is_under_attack(file, rank) {
+            return false;
+        } else {
+            let diff_y = (rank - self.data.rank).abs();
+            let diff_x = (file - self.data.file).abs();
+            return diff_y <= 1 && diff_x <= 1;
+        }
     }
 
     fn get_last_move(&self) -> Option<&pieces::PieceMove> {

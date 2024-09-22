@@ -127,7 +127,7 @@ impl Board {
     }*/
 
     // is a square under attack?
-    fn is_under_attack(&mut self, file: i8, rank: i8) -> bool {
+    pub fn is_under_attack(&self, file: i8, rank: i8) -> bool {
         return false;
     }
 

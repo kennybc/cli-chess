@@ -69,7 +69,8 @@ impl pieces::Piece for Pawn {
                         };
                     }
                 } else {
-                    return false;
+                    // true for any non-empty square: pawn can attack enemy or defend ally
+                    return true;
                 }
             }
         }
