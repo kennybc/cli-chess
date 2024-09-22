@@ -13,10 +13,6 @@ impl pieces::Piece for Empty {
         return pieces::PieceType::Empty;
     }
 
-    fn can_capture(&self, board: &board::Board, file: i8, rank: i8) -> bool {
-        return false;
-    }
-
     fn can_move(&self, _: &board::Board, _: i8, _: i8) -> bool {
         return false;
     }

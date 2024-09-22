@@ -23,10 +23,7 @@ fn get_piece_candidates(
             let candidate_square = &board.squares[board::convert_position_1d(f, r)];
             if let Some(p) = candidate_square.get_player() {
                 if p == *player && candidate_square.get_type() == *piece_type {
-                    if
-                        candidate_square.can_move(board, file, rank) ||
-                        candidate_square.can_capture(board, file, rank)
-                    {
+                    if candidate_square.can_move(board, file, rank) {
                         candidates.push((f, r));
                     }
                 }

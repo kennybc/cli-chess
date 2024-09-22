@@ -23,12 +23,11 @@ impl pieces::Piece for Knight {
         return pieces::PieceType::Knight;
     }
 
-    fn can_capture(&self, board: &board::Board, file: i8, rank: i8) -> bool {
-        return false;
-    }
-
-    fn can_move(&self, board: &board::Board, file: i8, rank: i8) -> bool {
-        return false;
+    fn can_move(&self, _: &board::Board, file: i8, rank: i8) -> bool {
+        // knight can't get blocked so don't care about board state
+        let diff_y = (rank - self.data.rank).abs();
+        let diff_x = (file - self.data.file).abs();
+        return (diff_y == 2 && diff_x == 1) || (diff_y == 1 && diff_x == 2);
     }
 
     fn get_last_move(&self) -> Option<&pieces::PieceMove> {
