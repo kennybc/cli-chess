@@ -1,0 +1,21 @@
+special cases:
+O-O (king side castle)
+O-O-O (queen side castle)
+
+possible syntax (in order)
+to determine which piece is moving:
+<Empty> (pawn)
+<PieceType>
+<PieceType> <Position> (position can be file > rank > both file & rank)
+
+move type modifier:
+x (captures)
+= (promotion)
+
+target/destination:
+<Position> (position here must be both file & rank) 
+<PieceType> (pawn promotion only)
+
+move outcome:
++ (check)
+# (checkmate)

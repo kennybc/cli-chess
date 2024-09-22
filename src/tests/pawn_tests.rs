@@ -1,7 +1,6 @@
 #[cfg(test)]
 mod tests {
     use crate::board;
-    use crate::game;
     use crate::pieces;
 
     // test forward movement
@@ -15,30 +14,9 @@ mod tests {
             pieces::PieceType::Pawn
         );
 
-        assert_eq!(
-            board.squares[board::convert_position_1d(0, 1)].can_move(&board, pieces::PiecePosition {
-                player: game::Player::White,
-                file: 0,
-                rank: 2,
-            }),
-            true
-        );
-        assert_eq!(
-            board.squares[board::convert_position_1d(0, 1)].can_move(&board, pieces::PiecePosition {
-                player: game::Player::White,
-                file: 0,
-                rank: 3,
-            }),
-            true
-        );
-        assert_eq!(
-            board.squares[board::convert_position_1d(0, 1)].can_move(&board, pieces::PiecePosition {
-                player: game::Player::White,
-                file: 0,
-                rank: 4,
-            }),
-            false
-        );
+        assert_eq!(board.squares[board::convert_position_1d(0, 1)].can_move(&board, 0, 2), true);
+        assert_eq!(board.squares[board::convert_position_1d(0, 1)].can_move(&board, 0, 3), true);
+        assert_eq!(board.squares[board::convert_position_1d(0, 1)].can_move(&board, 0, 4), false);
     }
 
     #[test]
@@ -51,29 +29,8 @@ mod tests {
             pieces::PieceType::Pawn
         );
 
-        assert_eq!(
-            board.squares[board::convert_position_1d(0, 6)].can_move(&board, pieces::PiecePosition {
-                player: game::Player::Black,
-                file: 0,
-                rank: 5,
-            }),
-            true
-        );
-        assert_eq!(
-            board.squares[board::convert_position_1d(0, 6)].can_move(&board, pieces::PiecePosition {
-                player: game::Player::Black,
-                file: 0,
-                rank: 4,
-            }),
-            true
-        );
-        assert_eq!(
-            board.squares[board::convert_position_1d(0, 6)].can_move(&board, pieces::PiecePosition {
-                player: game::Player::Black,
-                file: 0,
-                rank: 3,
-            }),
-            false
-        );
+        assert_eq!(board.squares[board::convert_position_1d(0, 6)].can_move(&board, 0, 5), true);
+        assert_eq!(board.squares[board::convert_position_1d(0, 6)].can_move(&board, 0, 4), true);
+        assert_eq!(board.squares[board::convert_position_1d(0, 6)].can_move(&board, 0, 3), false);
     }
 }
