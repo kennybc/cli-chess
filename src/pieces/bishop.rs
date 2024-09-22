@@ -24,6 +24,32 @@ impl pieces::Piece for Bishop {
     }
 
     fn can_move(&self, board: &board::Board, file: i8, rank: i8) -> bool {
+        let diff_y = (rank - self.data.rank).abs();
+        let diff_x = (file - self.data.file).abs();
+        if diff_y == diff_x {
+            let mut curr_file = self.data.file;
+            let mut curr_rank = self.data.rank;
+            while curr_file - file != 0 {
+                if curr_file > file {
+                    curr_file -= 1;
+                } else {
+                    curr_file += 1;
+                }
+                if curr_rank > rank {
+                    curr_rank -= 1;
+                } else {
+                    curr_rank += 1;
+                }
+
+                if
+                    board.squares[board::convert_position_1d(curr_file, curr_rank)].get_type() !=
+                    pieces::PieceType::Empty
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
         return false;
     }
 
