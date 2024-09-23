@@ -46,7 +46,7 @@ impl From<char> for PieceType {
 pub trait Piece: std::fmt::Display {
     fn get_player(&self) -> Option<game::Player>;
     fn get_type(&self) -> PieceType;
-    fn can_capture(&self, board: &board::Board, file: i8, rank: i8) -> bool;
+    fn can_attack(&self, board: &board::Board, file: i8, rank: i8) -> bool;
     fn can_move(&self, board: &board::Board, file: i8, rank: i8) -> bool;
     fn get_last_move(&self) -> Option<&PieceMove>;
 }

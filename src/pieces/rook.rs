@@ -1,3 +1,5 @@
+#![allow(unused_variables)]
+
 use crate::game;
 use crate::pieces;
 use crate::board;
@@ -23,7 +25,7 @@ impl pieces::Piece for Rook {
         return pieces::PieceType::Rook;
     }
 
-    fn can_capture(&self, board: &board::Board, file: i8, rank: i8) -> bool {
+    fn can_attack(&self, board: &board::Board, file: i8, rank: i8) -> bool {
         return false;
     }
 

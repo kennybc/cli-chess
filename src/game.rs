@@ -1,3 +1,5 @@
+#![allow(unused_variables)]
+
 use std::io;
 use crate::board;
 use crate::notation;

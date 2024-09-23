@@ -23,12 +23,43 @@ impl pieces::Piece for Bishop {
         return pieces::PieceType::Bishop;
     }
 
-    fn can_capture(&self, board: &board::Board, file: i8, rank: i8) -> bool {
+    fn can_attack(&self, board: &board::Board, file: i8, rank: i8) -> bool {
+        if let Some(p) = board.squares[board::convert_position_1d(file, rank)].get_player() {
+            if self.data.player == p {
+                return false;
+            }
+        }
+        let diff_y = (rank - self.data.rank).abs();
+        let diff_x = (file - self.data.file).abs();
+        if diff_y == diff_x {
+            let mut curr_file = self.data.file;
+            let mut curr_rank = self.data.rank;
+            while (curr_file - file).abs() > 1 {
+                if curr_file > file {
+                    curr_file -= 1;
+                } else {
+                    curr_file += 1;
+                }
+                if curr_rank > rank {
+                    curr_rank -= 1;
+                } else {
+                    curr_rank += 1;
+                }
+
+                if
+                    board.squares[board::convert_position_1d(curr_file, curr_rank)].get_type() !=
+                    pieces::PieceType::Empty
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
         return false;
     }
 
     fn can_move(&self, board: &board::Board, file: i8, rank: i8) -> bool {
-        return false;
+        return self.can_attack(board, file, rank);
     }
 
     fn get_last_move(&self) -> Option<&pieces::PieceMove> {
