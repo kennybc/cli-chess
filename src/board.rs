@@ -112,18 +112,6 @@ impl Board {
         }
     }
 
-    /*fn is_valid_move(
-        &mut self,
-        player: game::Player,
-        piece: pieces::PieceType,
-        file: i8,
-        rank: i8
-    ) {
-        // get possible "source" squares given the player + piece
-        // check if any instances of given player + piece exist on board
-        // if multiple instances, require disambiguating source position
-    }*/
-
     // is a square under attack? (considering the board from perspective of a defending player)
     pub fn is_under_attack(&self, defender: game::Player, file: i8, rank: i8) -> bool {
         for i in 0..64 {
