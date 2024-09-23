@@ -124,20 +124,33 @@ impl Board {
         // if multiple instances, require disambiguating source position
     }*/
 
-    // is a square under attack?
-    pub fn is_under_attack(&self, file: i8, rank: i8) -> bool {
+    // is a square under attack? (considering the board from perspective of a defending player)
+    pub fn is_under_attack(&self, defender: game::Player, file: i8, rank: i8) -> bool {
+        for i in 0..64 {
+            if let Some(p) = self.squares[i].get_player() {
+                if p != defender && self.squares[i].can_attack(self, file, rank) {
+                    return true;
+                }
+            }
+        }
         return false;
     }
 
     // check if a player can castle (helper)
     fn can_castle(&mut self, castle_rank: i8, rook_file: i8) -> bool {
-        let king_index = convert_position_1d(4, castle_rank);
-        let rook_index = convert_position_1d(rook_file, castle_rank);
+        if castle_rank != 0 && castle_rank != 7 {
+            return false;
+        }
+        let king = &self.squares[convert_position_1d(4, castle_rank)];
+        let rook = &self.squares[convert_position_1d(rook_file, castle_rank)];
+        let defender = if castle_rank == 0 { game::Player::White } else { game::Player::Black };
 
         // check if king and rook are in place
         if
-            self.squares[king_index].get_type() == pieces::PieceType::King &&
-            self.squares[rook_index].get_type() == pieces::PieceType::Rook
+            king.get_type() == pieces::PieceType::King &&
+            rook.get_type() == pieces::PieceType::Rook &&
+            king.get_last_move() == None &&
+            rook.get_last_move() == None
         {
             // ensure squares between king and rook are empty
             let castle_path = if rook_file == 0 { 1..4 } else { 5..7 };
@@ -153,7 +166,7 @@ impl Board {
             // ensure that king will not pass through check during castle
             let king_path = if rook_file == 0 { 2..5 } else { 4..7 };
             for i in king_path {
-                if self.is_under_attack(i, castle_rank) {
+                if self.is_under_attack(defender, i, castle_rank) {
                     return false;
                 }
 

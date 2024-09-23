@@ -30,25 +30,8 @@ impl pieces::Piece for Pawn {
         return pieces::PieceType::Pawn;
     }
 
-    fn can_move(&self, board: &board::Board, file: i8, rank: i8) -> bool {
-        let target = &board.squares[board::convert_position_1d(file, rank)];
-
-        // pawn move within same file (non-capture move)
-        if file == self.data.file {
-            // target position already occupied
-            if let pieces::PieceType::Empty = target.get_type() {
-            } else {
-                return false;
-            }
-
-            // allow one one square forwards
-            // first move allow two squares forwards
-            let diff: i8 = (rank - self.data.rank) * self.get_direction_coeff();
-            return match self.data.last_move {
-                None => diff == 1 || diff == 2,
-                Some(_) => diff == 1,
-            };
-        } else if file == self.data.file - 1 || file == self.data.file + 1 {
+    fn can_attack(&self, board: &board::Board, file: i8, rank: i8) -> bool {
+        if file == self.data.file - 1 || file == self.data.file + 1 {
             // the rank that the pawn can reach and attack
             let reach = (self.data.rank as i8) + self.get_direction_coeff();
             if (rank as i8) == reach {
@@ -73,6 +56,31 @@ impl pieces::Piece for Pawn {
                     return true;
                 }
             }
+        }
+        return false;
+    }
+
+    fn can_move(&self, board: &board::Board, file: i8, rank: i8) -> bool {
+        if self.can_attack(board, file, rank) {
+            return true;
+        }
+
+        let target = &board.squares[board::convert_position_1d(file, rank)];
+
+        // pawn move within same file (non-capture move)
+        if file == self.data.file {
+            // target position already occupied
+            if target.get_type() != pieces::PieceType::Empty {
+                return false;
+            }
+
+            // allow one one square forwards
+            // first move allow two squares forwards
+            let diff: i8 = (rank - self.data.rank) * self.get_direction_coeff();
+            return match self.get_last_move() {
+                None => diff == 1 || diff == 2,
+                Some(_) => diff == 1,
+            };
         }
 
         return false;

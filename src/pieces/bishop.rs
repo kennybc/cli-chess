@@ -23,7 +23,12 @@ impl pieces::Piece for Bishop {
         return pieces::PieceType::Bishop;
     }
 
-    fn can_move(&self, board: &board::Board, file: i8, rank: i8) -> bool {
+    fn can_attack(&self, board: &board::Board, file: i8, rank: i8) -> bool {
+        if let Some(p) = board.squares[board::convert_position_1d(file, rank)].get_player() {
+            if self.data.player == p {
+                return false;
+            }
+        }
         let diff_y = (rank - self.data.rank).abs();
         let diff_x = (file - self.data.file).abs();
         if diff_y == diff_x {
@@ -48,13 +53,13 @@ impl pieces::Piece for Bishop {
                     return false;
                 }
             }
-            if let Some(p) = board.squares[board::convert_position_1d(file, rank)].get_player() {
-                return self.data.player != p;
-            } else {
-                return true;
-            }
+            return true;
         }
         return false;
+    }
+
+    fn can_move(&self, board: &board::Board, file: i8, rank: i8) -> bool {
+        return self.can_attack(board, file, rank);
     }
 
     fn get_last_move(&self) -> Option<&pieces::PieceMove> {

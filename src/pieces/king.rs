@@ -23,13 +23,22 @@ impl pieces::Piece for King {
         return pieces::PieceType::King;
     }
 
+    fn can_attack(&self, _: &board::Board, file: i8, rank: i8) -> bool {
+        let diff_y = (rank - self.data.rank).abs();
+        let diff_x = (file - self.data.file).abs();
+        return diff_y <= 1 && diff_x <= 1;
+    }
+
     fn can_move(&self, board: &board::Board, file: i8, rank: i8) -> bool {
-        if board.is_under_attack(file, rank) {
+        if let Some(p) = board.squares[board::convert_position_1d(file, rank)].get_player() {
+            if self.data.player == p {
+                return false;
+            }
+        }
+        if board.is_under_attack(self.data.player, file, rank) {
             return false;
         } else {
-            let diff_y = (rank - self.data.rank).abs();
-            let diff_x = (file - self.data.file).abs();
-            return diff_y <= 1 && diff_x <= 1;
+            return self.can_attack(board, file, rank);
         }
     }
 

@@ -25,6 +25,10 @@ impl pieces::Piece for Rook {
         return pieces::PieceType::Rook;
     }
 
+    fn can_attack(&self, board: &board::Board, file: i8, rank: i8) -> bool {
+        return false;
+    }
+
     fn can_move(&self, board: &board::Board, file: i8, rank: i8) -> bool {
         return false;
     }
