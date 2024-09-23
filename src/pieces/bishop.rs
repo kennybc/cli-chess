@@ -29,7 +29,7 @@ impl pieces::Piece for Bishop {
         if diff_y == diff_x {
             let mut curr_file = self.data.file;
             let mut curr_rank = self.data.rank;
-            while curr_file - file != 0 {
+            while (curr_file - file).abs() > 1 {
                 if curr_file > file {
                     curr_file -= 1;
                 } else {
@@ -48,7 +48,11 @@ impl pieces::Piece for Bishop {
                     return false;
                 }
             }
-            return true;
+            if let Some(p) = board.squares[board::convert_position_1d(file, rank)].get_player() {
+                return self.data.player != p;
+            } else {
+                return true;
+            }
         }
         return false;
     }

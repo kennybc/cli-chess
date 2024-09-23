@@ -1,11 +1,11 @@
 #[cfg(test)]
-mod tests {
+mod pawn_tests {
     use crate::board;
     use crate::pieces;
 
     // test forward movement
     #[test]
-    fn white_move() {
+    fn white_pawn_move() {
         let mut board: board::Board = board::Board::new();
         board.reset_board();
 
@@ -20,7 +20,7 @@ mod tests {
     }
 
     #[test]
-    fn black_move() {
+    fn black_pawn_move() {
         let mut board: board::Board = board::Board::new();
         board.reset_board();
 
