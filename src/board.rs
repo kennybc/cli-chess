@@ -6,17 +6,33 @@ use crate::pieces;
 use crate::game;
 
 pub struct Board {
+    pub turn: i32,
+    pub state: game::GameState,
     pub squares: [Box<dyn pieces::Piece>; 64],
 }
 
 impl Board {
     pub fn new() -> Board {
         let board = Board {
+            turn: 0,
+            state: game::GameState::Playing(game::Player::White),
             squares: array_init::array_init(
                 |_| Box::new(pieces::empty::Empty {}) as Box<dyn pieces::Piece>
             ),
         };
         return board;
+    }
+
+    pub fn get_turn(&self) -> i32 {
+        return self.turn;
+    }
+
+    pub fn get_state(&self) -> &game::GameState {
+        return &self.state;
+    }
+
+    pub fn set_state(&mut self, state: game::GameState) {
+        self.state = state;
     }
 
     pub fn reset_board(&mut self) {
@@ -71,7 +87,11 @@ impl Board {
         self.squares[index] = Box::new(pieces::empty::Empty {}) as Box<dyn pieces::Piece>;
     }
 
-    pub fn execute_move(&mut self, player: game::Player, notation: &str) {
+    pub fn execute_move(
+        &mut self,
+        player: game::Player,
+        notation: &str
+    ) -> Result<(), pieces::MoveError> {
         // handle "special" castling notation first
         if notation == "O-O" || notation == "O-O-O" {
             let castle_rank = match player {
@@ -84,30 +104,55 @@ impl Board {
                 self.place_piece(player, pieces::PieceType::Rook, 5, castle_rank);
                 self.clear_square(4, castle_rank);
                 self.clear_square(7, castle_rank);
-            }
-            // queen side castle
-            if notation == "O-O-O" && self.can_queen_castle(castle_rank) {
+            } else if notation == "O-O-O" && self.can_queen_castle(castle_rank) {
                 self.place_piece(player, pieces::PieceType::King, 2, castle_rank);
                 self.place_piece(player, pieces::PieceType::Rook, 3, castle_rank);
                 self.clear_square(4, castle_rank);
                 self.clear_square(0, castle_rank);
-            }
-        } else {
-            let piece_move = notation
-                ::parse_notation(self, &player, notation)
-                .expect("invalid move");
-            let src_index = convert_position_1d(piece_move.src_file, piece_move.src_rank);
-            let dst_index = convert_position_1d(piece_move.dst_file, piece_move.dst_rank);
-            if self.squares[src_index].can_move(self, piece_move.dst_file, piece_move.dst_rank) {
-                self.clear_square(piece_move.src_file, piece_move.src_rank);
-                self.squares[dst_index] = new_boxed_piece(
-                    player,
-                    piece_move.piece_type,
-                    piece_move.dst_file,
-                    piece_move.dst_rank
-                );
             } else {
-                println!("invalid move!")
+                return Err(pieces::MoveError::InvalidMove);
+            }
+            return Ok(());
+        } else {
+            let piece_move = notation::parse_notation(self, &player, notation);
+            match piece_move {
+                Ok(mv) => {
+                    let src_index = convert_position_1d(mv.src_file, mv.src_rank);
+                    let dst_index = convert_position_1d(mv.dst_file, mv.dst_rank);
+
+                    // check if it is en passant
+                    let en_passant = false;
+                    if
+                        self.squares[src_index].get_type() == pieces::PieceType::Pawn &&
+                        self.squares[dst_index].get_type() == pieces::PieceType::Pawn &&
+                        mv.src_rank == mv.dst_rank
+                    {
+                        let direction_coef = match player {
+                            game::Player::White => 1,
+                            game::Player::Black => -1,
+                        };
+                        let en_passant_index = convert_position_1d(
+                            mv.dst_file,
+                            mv.src_rank + direction_coef
+                        );
+                        if self.squares[src_index].can_attack(self, mv.dst_file, mv.dst_file) {
+                        }
+                    } else if self.squares[src_index].can_move(self, mv.dst_file, mv.dst_rank) {
+                        self.clear_square(mv.src_file, mv.src_rank);
+
+                        self.squares[dst_index] = new_boxed_piece(
+                            player,
+                            mv.piece_type,
+                            mv.dst_file,
+                            mv.dst_rank
+                        );
+
+                        self.squares[dst_index].set_last_move(self.turn, mv);
+                    }
+                    self.turn += 1;
+                    return Ok(());
+                }
+                Err(e) => Err(e),
             }
         }
     }

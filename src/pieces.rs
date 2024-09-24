@@ -1,5 +1,6 @@
 use crate::game;
 use crate::board;
+use crate::pieces;
 
 pub mod empty;
 pub mod king;
@@ -8,6 +9,12 @@ pub mod rook;
 pub mod bishop;
 pub mod knight;
 pub mod pawn;
+
+pub enum MoveError {
+    InvalidNotation,
+    InvalidMove,
+    AmbiguousMove,
+}
 
 #[derive(PartialEq)]
 pub struct PieceMove {
@@ -32,7 +39,7 @@ pub enum PieceType {
 // allow inference from char (for notation parsing)
 impl From<char> for PieceType {
     fn from(c: char) -> PieceType {
-        match c.to_ascii_lowercase() {
+        match c {
             'k' => PieceType::King,
             'q' => PieceType::Queen,
             'r' => PieceType::Rook,
@@ -48,12 +55,13 @@ pub trait Piece: std::fmt::Display {
     fn get_type(&self) -> PieceType;
     fn can_attack(&self, board: &board::Board, file: i8, rank: i8) -> bool;
     fn can_move(&self, board: &board::Board, file: i8, rank: i8) -> bool;
-    fn get_last_move(&self) -> Option<&PieceMove>;
+    fn get_last_move(&self) -> Option<&(i32, PieceMove)>;
+    fn set_last_move(&mut self, turn: i32, mv: pieces::PieceMove);
 }
 
 pub struct PieceData {
     pub player: game::Player,
     pub file: i8,
     pub rank: i8,
-    pub last_move: Option<PieceMove>,
+    pub last_move: Option<(i32, PieceMove)>,
 }

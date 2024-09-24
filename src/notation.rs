@@ -3,6 +3,17 @@ use crate::game;
 use crate::pieces;
 use regex::Regex;
 
+impl std::fmt::Display for pieces::MoveError {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            pieces::MoveError::InvalidNotation => write!(f, "Invalid notation syntax!"),
+            pieces::MoveError::InvalidMove => write!(f, "Invalid move!"),
+            pieces::MoveError::AmbiguousMove =>
+                write!(f, "Multiple pieces can make that move! Please disambiguate!"),
+        }
+    }
+}
+
 fn get_piece_candidates(
     board: &board::Board,
     player: &game::Player,
@@ -16,7 +27,6 @@ fn get_piece_candidates(
     for f in 0..8 {
         if let Some(sf) = src_file {
             if f != sf {
-                println!("not target file, continuing");
                 continue;
             }
         }
@@ -25,7 +35,6 @@ fn get_piece_candidates(
             if let Some(p) = candidate_square.get_player() {
                 if let Some(sr) = src_rank {
                     if r != sr {
-                        println!("not target rank, continuing");
                         continue;
                     }
                 }
@@ -44,14 +53,16 @@ pub fn parse_notation(
     board: &board::Board,
     player: &game::Player,
     notation: &str
-) -> Result<pieces::PieceMove, ()> {
+) -> Result<pieces::PieceMove, pieces::MoveError> {
     let re = Regex::new(
-        r"(?:(?P<piece_type>[KQRBN])?(?P<src_file>[a-h])?(?P<src_rank>[1-8])?x?(?P<dst_file>[a-h])(?P<dst_rank>[1-8])(?:=(?P<promotion>[QRBN]))?(?P<check>[+#])?)$"
+        r"(?:(?P<piece_type>[KkQqRrBbNn])?(?P<src_file>[a-h])?(?P<src_rank>[1-8])?x?(?P<dst_file>[a-h])(?P<dst_rank>[1-8])(?:=(?P<promotion>[QqRrBbNn]))?(?P<check>[+#])?)$"
     ).unwrap();
 
     if let Some(caps) = re.captures(notation) {
         let piece_type = pieces::PieceType::from(
-            caps.name("piece_type").map_or('p', |m| m.as_str().chars().next().unwrap())
+            caps
+                .name("piece_type")
+                .map_or('p', |m| m.as_str().chars().next().unwrap().to_ascii_lowercase())
         );
         let src_file = caps
             .name("src_file")
@@ -63,10 +74,10 @@ pub fn parse_notation(
             caps.name("dst_file").unwrap().as_str().chars().next().unwrap()
         );
         let dst_rank = caps.name("dst_rank").unwrap().as_str().parse::<i8>().unwrap() - 1;
-        let promotion = caps.name("promotion").map_or("", |m| m.as_str());
+        /*let promotion = caps.name("promotion").map_or("", |m| m.as_str());
         let check = caps.name("check").map_or("", |m| m.as_str());
 
-        /*println!("Piece: {piece_type:?}");
+        println!("Piece: {piece_type:?}");
         println!("Source File: {src_file:?}");
         println!("Source Rank: {src_rank:?}");
         println!("Destination File: {}", dst_file);
@@ -85,12 +96,10 @@ pub fn parse_notation(
             dst_rank
         );
         if candidates.len() == 0 {
-            println!("no valid candidates");
-            return Err(());
+            return Err(pieces::MoveError::InvalidMove);
         }
         if candidates.len() > 1 {
-            println!("need to disambiguate");
-            return Err(());
+            return Err(pieces::MoveError::AmbiguousMove);
         }
 
         return Ok(pieces::PieceMove {
@@ -101,8 +110,7 @@ pub fn parse_notation(
             dst_rank,
         });
     } else {
-        println!("Invalid notation");
-        return Err(());
+        return Err(pieces::MoveError::InvalidNotation);
     }
 }
 
