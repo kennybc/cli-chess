@@ -24,6 +24,8 @@ impl pieces::Piece for Empty {
     fn get_last_move(&self) -> Option<&pieces::PieceMove> {
         return None;
     }
+
+    fn set_last_move(&mut self, _: pieces::PieceMove) {}
 }
 
 impl std::fmt::Display for Empty {

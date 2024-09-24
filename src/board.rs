@@ -98,6 +98,7 @@ impl Board {
                 .expect("invalid move");
             let src_index = convert_position_1d(piece_move.src_file, piece_move.src_rank);
             let dst_index = convert_position_1d(piece_move.dst_file, piece_move.dst_rank);
+
             if self.squares[src_index].can_move(self, piece_move.dst_file, piece_move.dst_rank) {
                 self.clear_square(piece_move.src_file, piece_move.src_rank);
                 self.squares[dst_index] = new_boxed_piece(
@@ -106,6 +107,8 @@ impl Board {
                     piece_move.dst_file,
                     piece_move.dst_rank
                 );
+
+                self.squares[dst_index].set_last_move(piece_move);
             } else {
                 println!("invalid move!")
             }

@@ -1,5 +1,6 @@
 use crate::game;
 use crate::board;
+use crate::pieces;
 
 pub mod empty;
 pub mod king;
@@ -49,6 +50,7 @@ pub trait Piece: std::fmt::Display {
     fn can_attack(&self, board: &board::Board, file: i8, rank: i8) -> bool;
     fn can_move(&self, board: &board::Board, file: i8, rank: i8) -> bool;
     fn get_last_move(&self) -> Option<&PieceMove>;
+    fn set_last_move(&mut self, mv: pieces::PieceMove);
 }
 
 pub struct PieceData {

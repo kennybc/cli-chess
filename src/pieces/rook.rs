@@ -36,6 +36,10 @@ impl pieces::Piece for Rook {
     fn get_last_move(&self) -> Option<&pieces::PieceMove> {
         return self.data.last_move.as_ref();
     }
+
+    fn set_last_move(&mut self, mv: pieces::PieceMove) {
+        self.data.last_move = Some(mv);
+    }
 }
 
 impl std::fmt::Display for Rook {

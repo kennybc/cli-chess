@@ -63,10 +63,10 @@ pub fn parse_notation(
             caps.name("dst_file").unwrap().as_str().chars().next().unwrap()
         );
         let dst_rank = caps.name("dst_rank").unwrap().as_str().parse::<i8>().unwrap() - 1;
-        let promotion = caps.name("promotion").map_or("", |m| m.as_str());
+        /*let promotion = caps.name("promotion").map_or("", |m| m.as_str());
         let check = caps.name("check").map_or("", |m| m.as_str());
 
-        /*println!("Piece: {piece_type:?}");
+        println!("Piece: {piece_type:?}");
         println!("Source File: {src_file:?}");
         println!("Source Rank: {src_rank:?}");
         println!("Destination File: {}", dst_file);
