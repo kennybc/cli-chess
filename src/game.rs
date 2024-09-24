@@ -33,20 +33,18 @@ pub fn game_loop() {
             GameState::Playing(p) => {
                 println!("({p:?}) Enter your move:");
 
-                let mut next_move = String::new();
-                io::stdin().read_line(&mut next_move).expect("failed to read line");
-                let next_move = next_move.trim();
+                let mut notation = String::new();
+                io::stdin().read_line(&mut notation).expect("failed to read line");
+                let notation = notation.trim();
 
-                if next_move == "" {
+                if notation == "" {
                     println!("{board}");
-                } else if next_move == "draw" {
+                } else if notation == "draw" {
                     state = GameState::Draw;
-                } else if next_move == "resign" {
+                } else if notation == "resign" {
                     state = GameState::Won(other_player(p));
                 } else {
-                    let m = notation::parse_notation(&board, &p, &next_move).expect("");
-                    //board.move_piece(p, pieces::PieceType::Pawn, 4, 1, 4, 3);
-                    //board.place_piece(p, piece, file, rank);
+                    board.execute_move(p, notation);
                     println!("{board}");
                     state = GameState::Playing(other_player(p));
                 }
