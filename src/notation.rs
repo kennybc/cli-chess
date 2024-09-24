@@ -1,29 +1,36 @@
 use crate::board;
 use crate::game;
 use crate::pieces;
-
-fn get_char(notation: &str, index: usize) -> char {
-    return notation
-        .chars()
-        .nth(index)
-        .expect("could not convert notation index to char")
-        .to_ascii_lowercase();
-}
+use regex::Regex;
 
 fn get_piece_candidates(
     board: &board::Board,
     player: &game::Player,
     piece_type: &pieces::PieceType,
-    file: i8,
-    rank: i8
+    src_file: Option<i8>,
+    src_rank: Option<i8>,
+    dst_file: i8,
+    dst_rank: i8
 ) -> Vec<(i8, i8)> {
     let mut candidates: Vec<(i8, i8)> = Vec::new();
     for f in 0..8 {
+        if let Some(sf) = src_file {
+            if f != sf {
+                println!("not target file, continuing");
+                continue;
+            }
+        }
         for r in 0..8 {
             let candidate_square = &board.squares[board::convert_position_1d(f, r)];
             if let Some(p) = candidate_square.get_player() {
+                if let Some(sr) = src_rank {
+                    if r != sr {
+                        println!("not target rank, continuing");
+                        continue;
+                    }
+                }
                 if p == *player && candidate_square.get_type() == *piece_type {
-                    if candidate_square.can_move(board, file, rank) {
+                    if candidate_square.can_move(board, dst_file, dst_rank) {
                         candidates.push((f, r));
                     }
                 }
@@ -38,48 +45,65 @@ pub fn parse_notation(
     player: &game::Player,
     notation: &str
 ) -> Result<pieces::PieceMove, ()> {
-    let mut pos_begin_index = 1;
+    let re = Regex::new(
+        r"(?:(?P<piece_type>[KQRBN])?(?P<src_file>[a-h])?(?P<src_rank>[1-8])?x?(?P<dst_file>[a-h])(?P<dst_rank>[1-8])(?:=(?P<promotion>[QRBN]))?(?P<check>[+#])?)$"
+    ).unwrap();
 
-    // get the piece type from notation
-    let piece_type: pieces::PieceType = pieces::PieceType::from(get_char(notation, 0));
+    if let Some(caps) = re.captures(notation) {
+        let piece_type = pieces::PieceType::from(
+            caps.name("piece_type").map_or('p', |m| m.as_str().chars().next().unwrap())
+        );
+        let src_file = caps
+            .name("src_file")
+            .map_or(None, |m| Some(convert_file(m.as_str().chars().next().unwrap())));
+        let src_rank = caps
+            .name("src_rank")
+            .map_or(None, |m| Some(m.as_str().parse::<i8>().unwrap() - 1));
+        let dst_file = convert_file(
+            caps.name("dst_file").unwrap().as_str().chars().next().unwrap()
+        );
+        let dst_rank = caps.name("dst_rank").unwrap().as_str().parse::<i8>().unwrap() - 1;
+        let promotion = caps.name("promotion").map_or("", |m| m.as_str());
+        let check = caps.name("check").map_or("", |m| m.as_str());
 
-    if pieces::PieceType::Pawn == piece_type {
-        pos_begin_index = 0;
-    }
+        /*println!("Piece: {piece_type:?}");
+        println!("Source File: {src_file:?}");
+        println!("Source Rank: {src_rank:?}");
+        println!("Destination File: {}", dst_file);
+        println!("Destination Rank: {}", dst_rank);
+        println!("Promotion: {}", promotion);
+        println!("Check: {}", check);*/
 
-    // get the destination file from notation
-    let mut file: char = get_char(notation, pos_begin_index);
-    if file == 'x' {
-        pos_begin_index += 1;
-        file = get_char(notation, pos_begin_index);
-    }
-    let file: i8 = convert_file(file);
+        // get all potential pieces that could make this move
+        let candidates = get_piece_candidates(
+            board,
+            player,
+            &piece_type,
+            src_file,
+            src_rank,
+            dst_file,
+            dst_rank
+        );
+        if candidates.len() == 0 {
+            println!("no valid candidates");
+            return Err(());
+        }
+        if candidates.len() > 1 {
+            println!("need to disambiguate");
+            return Err(());
+        }
 
-    // get the destination rank from notation
-    let rank: i8 = (get_char(notation, pos_begin_index + 1)
-        .to_digit(10)
-        .expect("invalid rank") - 1) as i8;
-
-    println!("piece: {piece_type:?}, file: {file}, rank: {rank}");
-
-    // get all potential pieces that could make this move
-    let candidates = get_piece_candidates(board, player, &piece_type, file, rank);
-    if candidates.len() == 0 {
-        println!("no valid candidates");
+        return Ok(pieces::PieceMove {
+            piece_type,
+            src_file: candidates[0].0,
+            src_rank: candidates[0].1,
+            dst_file,
+            dst_rank,
+        });
+    } else {
+        println!("Invalid notation");
         return Err(());
     }
-    for candidate in candidates {
-        println!("candidate: {candidate:?}");
-        // todo
-    }
-
-    return Ok(pieces::PieceMove {
-        piece_type,
-        src_file: file,
-        src_rank: rank,
-        dst_file: file,
-        dst_rank: rank,
-    });
 }
 
 // convert a file (a-h) to an integer (0-8)
