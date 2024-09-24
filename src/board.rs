@@ -109,53 +109,46 @@ impl Board {
                 self.clear_square(0, castle_rank);
             }
         } else {
-            let piece_move = notation
-                ::parse_notation(self, &player, notation)
-                .expect("invalid move");
-            let src_index = convert_position_1d(piece_move.src_file, piece_move.src_rank);
-            let dst_index = convert_position_1d(piece_move.dst_file, piece_move.dst_rank);
+            let piece_move = notation::parse_notation(self, &player, notation);
+            match piece_move {
+                Ok(mv) => {
+                    let src_index = convert_position_1d(mv.src_file, mv.src_rank);
+                    let dst_index = convert_position_1d(mv.dst_file, mv.dst_rank);
 
-            // check if it is en passant
-            let en_passant = false;
-            if
-                self.squares[src_index].get_type() == pieces::PieceType::Pawn &&
-                self.squares[dst_index].get_type() == pieces::PieceType::Pawn &&
-                piece_move.src_rank == piece_move.dst_rank
-            {
-                let direction_coef = match player {
-                    game::Player::White => 1,
-                    game::Player::Black => -1,
-                };
-                let en_passant_index = convert_position_1d(
-                    piece_move.dst_file,
-                    piece_move.src_rank + direction_coef
-                );
-                if
-                    self.squares[src_index].can_attack(
-                        self,
-                        piece_move.dst_file,
-                        piece_move.dst_file
-                    )
-                {
+                    // check if it is en passant
+                    let en_passant = false;
+                    if
+                        self.squares[src_index].get_type() == pieces::PieceType::Pawn &&
+                        self.squares[dst_index].get_type() == pieces::PieceType::Pawn &&
+                        mv.src_rank == mv.dst_rank
+                    {
+                        let direction_coef = match player {
+                            game::Player::White => 1,
+                            game::Player::Black => -1,
+                        };
+                        let en_passant_index = convert_position_1d(
+                            mv.dst_file,
+                            mv.src_rank + direction_coef
+                        );
+                        if self.squares[src_index].can_attack(self, mv.dst_file, mv.dst_file) {
+                        }
+                    } else if self.squares[src_index].can_move(self, mv.dst_file, mv.dst_rank) {
+                        self.clear_square(mv.src_file, mv.src_rank);
+
+                        self.squares[dst_index] = new_boxed_piece(
+                            player,
+                            mv.piece_type,
+                            mv.dst_file,
+                            mv.dst_rank
+                        );
+
+                        self.squares[dst_index].set_last_move(self.turn, mv);
+                    }
+                    self.turn += 1;
                 }
-            } else if
-                self.squares[src_index].can_move(self, piece_move.dst_file, piece_move.dst_rank)
-            {
-                self.clear_square(piece_move.src_file, piece_move.src_rank);
-
-                self.squares[dst_index] = new_boxed_piece(
-                    player,
-                    piece_move.piece_type,
-                    piece_move.dst_file,
-                    piece_move.dst_rank
-                );
-
-                self.squares[dst_index].set_last_move(self.turn, piece_move);
-            } else {
-                println!("invalid move!");
+                Err(e) => { println!("Error: {e}") }
             }
         }
-        self.turn += 1;
     }
 
     // is a square under attack? (considering the board from perspective of a defending player)

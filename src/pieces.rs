@@ -33,7 +33,7 @@ pub enum PieceType {
 // allow inference from char (for notation parsing)
 impl From<char> for PieceType {
     fn from(c: char) -> PieceType {
-        match c.to_ascii_lowercase() {
+        match c {
             'k' => PieceType::King,
             'q' => PieceType::Queen,
             'r' => PieceType::Rook,

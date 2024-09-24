@@ -27,7 +27,6 @@ pub fn game_loop() {
     loop {
         if let &GameState::Playing(p) = board.get_state() {
             println!("({p:?}) Enter your move:");
-            let notation = String::new();
             let mut notation = String::new();
             io::stdin().read_line(&mut notation).expect("failed to read line");
             let notation = notation.trim();
