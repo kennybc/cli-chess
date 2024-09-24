@@ -1,8 +1,5 @@
-#![allow(unused_variables)]
-
 use std::io;
 use crate::board;
-use crate::notation;
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum Player {
@@ -24,41 +21,45 @@ pub fn other_player(p: Player) -> Player {
 }
 
 pub fn game_loop() {
-    let mut state = GameState::Playing(Player::White);
     let mut board = board::Board::new();
     board.reset_board();
+    println!("{board}");
 
     loop {
-        match state {
-            GameState::Playing(p) => {
-                println!("({p:?}) Enter your move:");
+        if let &GameState::Playing(p) = board.get_state() {
+            println!("({p:?}) Enter your move:");
+            let mut notation = String::new();
+            io::stdin().read_line(&mut notation).expect("failed to read line");
+            let notation = notation.trim();
 
-                let mut notation = String::new();
-                io::stdin().read_line(&mut notation).expect("failed to read line");
-                let notation = notation.trim();
-
-                if notation == "" {
-                    println!("{board}");
-                } else if notation == "draw" {
-                    state = GameState::Draw;
-                } else if notation == "resign" {
-                    state = GameState::Won(other_player(p));
-                } else {
-                    board.execute_move(p, notation);
-                    println!("{board}");
-                    state = GameState::Playing(other_player(p));
+            if notation == "" {
+                println!("{board}");
+            } else if notation == "draw" {
+                board.set_state(GameState::Draw);
+            } else if notation == "resign" {
+                board.set_state(GameState::Won(other_player(p)));
+            } else {
+                let result = board.execute_move(p, &notation);
+                match result {
+                    Ok(_) => {
+                        println!("{board}");
+                        board.set_state(GameState::Playing(other_player(p)));
+                    }
+                    Err(e) => {
+                        println!("Error: {e}");
+                    }
                 }
             }
-
-            GameState::Won(p) => {
-                println!("{p:?} won!");
-                break;
-            }
-
-            GameState::Draw => {
-                println!("Game ended in a draw!");
-                break;
-            }
+        } else {
+            break;
         }
+    }
+
+    if let GameState::Won(p) = board.get_state() {
+        println!("{p:?} won!");
+    }
+
+    if let GameState::Draw = board.get_state() {
+        println!("Game ended in a draw!");
     }
 }

@@ -62,8 +62,12 @@ impl pieces::Piece for Bishop {
         return self.can_attack(board, file, rank);
     }
 
-    fn get_last_move(&self) -> Option<&pieces::PieceMove> {
+    fn get_last_move(&self) -> Option<&(i32, pieces::PieceMove)> {
         return self.data.last_move.as_ref();
+    }
+
+    fn set_last_move(&mut self, turn: i32, mv: pieces::PieceMove) {
+        self.data.last_move = Some((turn, mv));
     }
 }
 
