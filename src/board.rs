@@ -116,39 +116,28 @@ impl Board {
         } else {
             let piece_move = notation::parse_notation(self, &player, notation);
             match piece_move {
-                Ok(mv) => {
+                Ok(mut mv) => {
                     let src_index = convert_position_1d(mv.src_file, mv.src_rank);
                     let dst_index = convert_position_1d(mv.dst_file, mv.dst_rank);
 
                     // check if it is en passant
-                    let en_passant = false;
                     if
                         self.squares[src_index].get_type() == pieces::PieceType::Pawn &&
-                        self.squares[dst_index].get_type() == pieces::PieceType::Pawn &&
                         mv.src_rank == mv.dst_rank
                     {
                         let direction_coef = match player {
                             game::Player::White => 1,
                             game::Player::Black => -1,
                         };
-                        let en_passant_index = convert_position_1d(
-                            mv.dst_file,
-                            mv.src_rank + direction_coef
-                        );
-                        if self.squares[src_index].can_attack(self, mv.dst_file, mv.dst_file) {
-                        }
-                    } else if self.squares[src_index].can_move(self, mv.dst_file, mv.dst_rank) {
+
                         self.clear_square(mv.src_file, mv.src_rank);
-
-                        self.squares[dst_index] = new_boxed_piece(
-                            player,
-                            mv.piece_type,
-                            mv.dst_file,
-                            mv.dst_rank
-                        );
-
-                        self.squares[dst_index].set_last_move(self.turn, mv);
+                        self.clear_square(mv.dst_file, mv.src_rank);
+                        mv.dst_rank += direction_coef;
+                    } else {
+                        self.clear_square(mv.src_file, mv.src_rank);
                     }
+                    self.place_piece(player, mv.piece_type, mv.dst_file, mv.dst_rank);
+                    self.squares[dst_index].set_last_move(self.turn, mv);
                     self.turn += 1;
                     return Ok(());
                 }

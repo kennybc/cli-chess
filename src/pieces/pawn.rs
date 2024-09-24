@@ -30,11 +30,15 @@ impl pieces::Piece for Pawn {
         return pieces::PieceType::Pawn;
     }
 
-    fn can_attack(&self, board: &board::Board, file: i8, rank: i8) -> bool {
+    fn can_attack(&self, board: &board::Board, file: i8, mut rank: i8) -> bool {
         if file == self.data.file - 1 || file == self.data.file + 1 {
             // the rank that the pawn can reach and attack
-            let reach = (self.data.rank as i8) + self.get_direction_coeff();
-            if (rank as i8) == reach {
+            let reach = self.data.rank + self.get_direction_coeff();
+            if rank == reach || rank == self.data.rank {
+                if rank == self.data.rank {
+                    rank = reach;
+                    println!("{rank}");
+                }
                 if reach < 0 || reach > 7 {
                     return false;
                 }
@@ -45,7 +49,7 @@ impl pieces::Piece for Pawn {
                     // en passant
                     let en_passant_square =
                         &board.squares[board::convert_position_1d(file, self.data.rank)];
-                    if pieces::PieceType::Pawn == en_passant_square.get_type() {
+                    if en_passant_square.get_type() == pieces::PieceType::Pawn {
                         return match en_passant_square.get_last_move() {
                             None => false,
                             Some(tuple) =>
