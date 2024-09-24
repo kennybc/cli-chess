@@ -3,18 +3,12 @@ use crate::game;
 use crate::pieces;
 use regex::Regex;
 
-pub enum NotationError {
-    InvalidSyntax,
-    InvalidMove,
-    AmbiguousMove,
-}
-
-impl std::fmt::Display for NotationError {
+impl std::fmt::Display for pieces::MoveError {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
-            NotationError::InvalidSyntax => write!(f, "Invalid notation syntax!"),
-            NotationError::InvalidMove => write!(f, "Invalid move!"),
-            NotationError::AmbiguousMove =>
+            pieces::MoveError::InvalidNotation => write!(f, "Invalid notation syntax!"),
+            pieces::MoveError::InvalidMove => write!(f, "Invalid move!"),
+            pieces::MoveError::AmbiguousMove =>
                 write!(f, "Multiple pieces can make that move! Please disambiguate!"),
         }
     }
@@ -59,9 +53,9 @@ pub fn parse_notation(
     board: &board::Board,
     player: &game::Player,
     notation: &str
-) -> Result<pieces::PieceMove, NotationError> {
+) -> Result<pieces::PieceMove, pieces::MoveError> {
     let re = Regex::new(
-        r"(?:(?P<piece_type>[KQRBN])?(?P<src_file>[a-h])?(?P<src_rank>[1-8])?x?(?P<dst_file>[a-h])(?P<dst_rank>[1-8])(?:=(?P<promotion>[QRBN]))?(?P<check>[+#])?)$"
+        r"(?:(?P<piece_type>[KkQqRrBbNn])?(?P<src_file>[a-h])?(?P<src_rank>[1-8])?x?(?P<dst_file>[a-h])(?P<dst_rank>[1-8])(?:=(?P<promotion>[QqRrBbNn]))?(?P<check>[+#])?)$"
     ).unwrap();
 
     if let Some(caps) = re.captures(notation) {
@@ -102,10 +96,10 @@ pub fn parse_notation(
             dst_rank
         );
         if candidates.len() == 0 {
-            return Err(NotationError::InvalidMove);
+            return Err(pieces::MoveError::InvalidMove);
         }
         if candidates.len() > 1 {
-            return Err(NotationError::AmbiguousMove);
+            return Err(pieces::MoveError::AmbiguousMove);
         }
 
         return Ok(pieces::PieceMove {
@@ -116,7 +110,7 @@ pub fn parse_notation(
             dst_rank,
         });
     } else {
-        return Err(NotationError::InvalidSyntax);
+        return Err(pieces::MoveError::InvalidNotation);
     }
 }
 

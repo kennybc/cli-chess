@@ -87,7 +87,11 @@ impl Board {
         self.squares[index] = Box::new(pieces::empty::Empty {}) as Box<dyn pieces::Piece>;
     }
 
-    pub fn execute_move(&mut self, player: game::Player, notation: &str) {
+    pub fn execute_move(
+        &mut self,
+        player: game::Player,
+        notation: &str
+    ) -> Result<(), pieces::MoveError> {
         // handle "special" castling notation first
         if notation == "O-O" || notation == "O-O-O" {
             let castle_rank = match player {
@@ -100,14 +104,15 @@ impl Board {
                 self.place_piece(player, pieces::PieceType::Rook, 5, castle_rank);
                 self.clear_square(4, castle_rank);
                 self.clear_square(7, castle_rank);
-            }
-            // queen side castle
-            if notation == "O-O-O" && self.can_queen_castle(castle_rank) {
+            } else if notation == "O-O-O" && self.can_queen_castle(castle_rank) {
                 self.place_piece(player, pieces::PieceType::King, 2, castle_rank);
                 self.place_piece(player, pieces::PieceType::Rook, 3, castle_rank);
                 self.clear_square(4, castle_rank);
                 self.clear_square(0, castle_rank);
+            } else {
+                return Err(pieces::MoveError::InvalidMove);
             }
+            return Ok(());
         } else {
             let piece_move = notation::parse_notation(self, &player, notation);
             match piece_move {
@@ -145,8 +150,9 @@ impl Board {
                         self.squares[dst_index].set_last_move(self.turn, mv);
                     }
                     self.turn += 1;
+                    return Ok(());
                 }
-                Err(e) => { println!("Error: {e}") }
+                Err(e) => Err(e),
             }
         }
     }

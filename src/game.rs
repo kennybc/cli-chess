@@ -23,6 +23,7 @@ pub fn other_player(p: Player) -> Player {
 pub fn game_loop() {
     let mut board = board::Board::new();
     board.reset_board();
+    println!("{board}");
 
     loop {
         if let &GameState::Playing(p) = board.get_state() {
@@ -38,9 +39,16 @@ pub fn game_loop() {
             } else if notation == "resign" {
                 board.set_state(GameState::Won(other_player(p)));
             } else {
-                board.execute_move(p, &notation);
-                println!("{board}");
-                board.set_state(GameState::Playing(other_player(p)));
+                let result = board.execute_move(p, &notation);
+                match result {
+                    Ok(_) => {
+                        println!("{board}");
+                        board.set_state(GameState::Playing(other_player(p)));
+                    }
+                    Err(e) => {
+                        println!("Error: {e}");
+                    }
+                }
             }
         } else {
             break;

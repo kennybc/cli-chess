@@ -10,6 +10,12 @@ pub mod bishop;
 pub mod knight;
 pub mod pawn;
 
+pub enum MoveError {
+    InvalidNotation,
+    InvalidMove,
+    AmbiguousMove,
+}
+
 #[derive(PartialEq)]
 pub struct PieceMove {
     pub piece_type: PieceType,
