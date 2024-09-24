@@ -49,13 +49,13 @@ pub trait Piece: std::fmt::Display {
     fn get_type(&self) -> PieceType;
     fn can_attack(&self, board: &board::Board, file: i8, rank: i8) -> bool;
     fn can_move(&self, board: &board::Board, file: i8, rank: i8) -> bool;
-    fn get_last_move(&self) -> Option<&PieceMove>;
-    fn set_last_move(&mut self, mv: pieces::PieceMove);
+    fn get_last_move(&self) -> Option<&(i32, PieceMove)>;
+    fn set_last_move(&mut self, turn: i32, mv: pieces::PieceMove);
 }
 
 pub struct PieceData {
     pub player: game::Player,
     pub file: i8,
     pub rank: i8,
-    pub last_move: Option<PieceMove>,
+    pub last_move: Option<(i32, PieceMove)>,
 }

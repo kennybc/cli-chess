@@ -21,11 +21,11 @@ impl pieces::Piece for Empty {
         return false;
     }
 
-    fn get_last_move(&self) -> Option<&pieces::PieceMove> {
+    fn get_last_move(&self) -> Option<&(i32, pieces::PieceMove)> {
         return None;
     }
 
-    fn set_last_move(&mut self, _: pieces::PieceMove) {}
+    fn set_last_move(&mut self, _: i32, _: pieces::PieceMove) {}
 }
 
 impl std::fmt::Display for Empty {

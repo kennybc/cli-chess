@@ -6,17 +6,33 @@ use crate::pieces;
 use crate::game;
 
 pub struct Board {
+    pub turn: i32,
+    pub state: game::GameState,
     pub squares: [Box<dyn pieces::Piece>; 64],
 }
 
 impl Board {
     pub fn new() -> Board {
         let board = Board {
+            turn: 0,
+            state: game::GameState::Playing(game::Player::White),
             squares: array_init::array_init(
                 |_| Box::new(pieces::empty::Empty {}) as Box<dyn pieces::Piece>
             ),
         };
         return board;
+    }
+
+    pub fn get_turn(&self) -> i32 {
+        return self.turn;
+    }
+
+    pub fn get_state(&self) -> &game::GameState {
+        return &self.state;
+    }
+
+    pub fn set_state(&mut self, state: game::GameState) {
+        self.state = state;
     }
 
     pub fn reset_board(&mut self) {
@@ -99,8 +115,34 @@ impl Board {
             let src_index = convert_position_1d(piece_move.src_file, piece_move.src_rank);
             let dst_index = convert_position_1d(piece_move.dst_file, piece_move.dst_rank);
 
-            if self.squares[src_index].can_move(self, piece_move.dst_file, piece_move.dst_rank) {
+            // check if it is en passant
+            let en_passant = false;
+            if
+                self.squares[src_index].get_type() == pieces::PieceType::Pawn &&
+                self.squares[dst_index].get_type() == pieces::PieceType::Pawn &&
+                piece_move.src_rank == piece_move.dst_rank
+            {
+                let direction_coef = match player {
+                    game::Player::White => 1,
+                    game::Player::Black => -1,
+                };
+                let en_passant_index = convert_position_1d(
+                    piece_move.dst_file,
+                    piece_move.src_rank + direction_coef
+                );
+                if
+                    self.squares[src_index].can_attack(
+                        self,
+                        piece_move.dst_file,
+                        piece_move.dst_file
+                    )
+                {
+                }
+            } else if
+                self.squares[src_index].can_move(self, piece_move.dst_file, piece_move.dst_rank)
+            {
                 self.clear_square(piece_move.src_file, piece_move.src_rank);
+
                 self.squares[dst_index] = new_boxed_piece(
                     player,
                     piece_move.piece_type,
@@ -108,11 +150,12 @@ impl Board {
                     piece_move.dst_rank
                 );
 
-                self.squares[dst_index].set_last_move(piece_move);
+                self.squares[dst_index].set_last_move(self.turn, piece_move);
             } else {
-                println!("invalid move!")
+                println!("invalid move!");
             }
         }
+        self.turn += 1;
     }
 
     // is a square under attack? (considering the board from perspective of a defending player)

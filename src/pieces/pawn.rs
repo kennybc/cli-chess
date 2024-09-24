@@ -48,7 +48,9 @@ impl pieces::Piece for Pawn {
                     if pieces::PieceType::Pawn == en_passant_square.get_type() {
                         return match en_passant_square.get_last_move() {
                             None => false,
-                            Some(m) => (m.src_rank - m.dst_rank).abs() == 2,
+                            Some(tuple) =>
+                                tuple.0 == board.get_turn() - 1 &&
+                                    (tuple.1.src_rank - tuple.1.dst_rank).abs() == 2,
                         };
                     }
                 } else {
@@ -86,12 +88,12 @@ impl pieces::Piece for Pawn {
         return false;
     }
 
-    fn get_last_move(&self) -> Option<&pieces::PieceMove> {
+    fn get_last_move(&self) -> Option<&(i32, pieces::PieceMove)> {
         return self.data.last_move.as_ref();
     }
 
-    fn set_last_move(&mut self, mv: pieces::PieceMove) {
-        self.data.last_move = Some(mv);
+    fn set_last_move(&mut self, turn: i32, mv: pieces::PieceMove) {
+        self.data.last_move = Some((turn, mv));
     }
 }
 
