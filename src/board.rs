@@ -222,9 +222,9 @@ impl std::fmt::Display for Board {
             }
             if let Some(p) = piece.get_player() {
                 if p == game::Player::Black {
-                    piece_string = piece_string.red().to_string();
-                } else {
                     piece_string = piece_string.blue().to_string();
+                } else {
+                    piece_string = piece_string.red().to_string();
                 }
             }
             board_string += &piece_string;
