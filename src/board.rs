@@ -1,5 +1,4 @@
-#![allow(unused_variables)]
-#![allow(dead_code)]
+use colored::Colorize;
 
 use crate::notation;
 use crate::pieces;
@@ -116,39 +115,28 @@ impl Board {
         } else {
             let piece_move = notation::parse_notation(self, &player, notation);
             match piece_move {
-                Ok(mv) => {
+                Ok(mut mv) => {
                     let src_index = convert_position_1d(mv.src_file, mv.src_rank);
                     let dst_index = convert_position_1d(mv.dst_file, mv.dst_rank);
 
                     // check if it is en passant
-                    let en_passant = false;
                     if
                         self.squares[src_index].get_type() == pieces::PieceType::Pawn &&
-                        self.squares[dst_index].get_type() == pieces::PieceType::Pawn &&
                         mv.src_rank == mv.dst_rank
                     {
                         let direction_coef = match player {
                             game::Player::White => 1,
                             game::Player::Black => -1,
                         };
-                        let en_passant_index = convert_position_1d(
-                            mv.dst_file,
-                            mv.src_rank + direction_coef
-                        );
-                        if self.squares[src_index].can_attack(self, mv.dst_file, mv.dst_file) {
-                        }
-                    } else if self.squares[src_index].can_move(self, mv.dst_file, mv.dst_rank) {
+
                         self.clear_square(mv.src_file, mv.src_rank);
-
-                        self.squares[dst_index] = new_boxed_piece(
-                            player,
-                            mv.piece_type,
-                            mv.dst_file,
-                            mv.dst_rank
-                        );
-
-                        self.squares[dst_index].set_last_move(self.turn, mv);
+                        self.clear_square(mv.dst_file, mv.src_rank);
+                        mv.dst_rank += direction_coef;
+                    } else {
+                        self.clear_square(mv.src_file, mv.src_rank);
                     }
+                    self.place_piece(player, mv.piece_type, mv.dst_file, mv.dst_rank);
+                    self.squares[dst_index].set_last_move(self.turn, mv);
                     self.turn += 1;
                     return Ok(());
                 }
@@ -224,9 +212,22 @@ impl std::fmt::Display for Board {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         let mut board_string = String::new();
         for (i, piece) in self.squares.iter().enumerate() {
-            board_string += &piece.to_string();
-            board_string += " ";
+            let mut piece_string = piece.to_string() + " ";
+            let row = i / 8;
             let col = i % 8;
+            if (row + col) % 2 == 0 {
+                piece_string = piece_string.on_truecolor(240, 240, 240).to_string();
+            } else {
+                piece_string = piece_string.on_truecolor(202, 202, 202).to_string();
+            }
+            if let Some(p) = piece.get_player() {
+                if p == game::Player::Black {
+                    piece_string = piece_string.blue().to_string();
+                } else {
+                    piece_string = piece_string.red().to_string();
+                }
+            }
+            board_string += &piece_string;
             if col == 7 {
                 board_string += "\n";
             }

@@ -16,7 +16,7 @@ pub enum MoveError {
     AmbiguousMove,
 }
 
-#[derive(PartialEq)]
+#[derive(Debug, PartialEq)]
 pub struct PieceMove {
     pub piece_type: PieceType,
     pub src_file: i8,
