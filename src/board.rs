@@ -91,19 +91,21 @@ impl Board {
         player: game::Player,
         notation: &str
     ) -> Result<(), pieces::MoveError> {
+        let notation = notation.to_ascii_lowercase();
+
         // handle "special" castling notation first
-        if notation == "O-O" || notation == "O-O-O" {
+        if notation == "o-o" || notation == "o-o-o" {
             let castle_rank = match player {
                 game::Player::White => 0,
                 game::Player::Black => 7,
             };
             // king side castle
-            if notation == "O-O" && self.can_king_castle(castle_rank) {
+            if notation == "o-o" && self.can_king_castle(castle_rank) {
                 self.place_piece(player, pieces::PieceType::King, 6, castle_rank);
                 self.place_piece(player, pieces::PieceType::Rook, 5, castle_rank);
                 self.clear_square(4, castle_rank);
                 self.clear_square(7, castle_rank);
-            } else if notation == "O-O-O" && self.can_queen_castle(castle_rank) {
+            } else if notation == "o-o-o" && self.can_queen_castle(castle_rank) {
                 self.place_piece(player, pieces::PieceType::King, 2, castle_rank);
                 self.place_piece(player, pieces::PieceType::Rook, 3, castle_rank);
                 self.clear_square(4, castle_rank);
@@ -113,7 +115,7 @@ impl Board {
             }
             return Ok(());
         } else {
-            let piece_move = notation::parse_notation(self, &player, notation);
+            let piece_move = notation::parse_notation(self, &player, &notation);
             match piece_move {
                 Ok(mut mv) => {
                     let src_index = convert_position_1d(mv.src_file, mv.src_rank);

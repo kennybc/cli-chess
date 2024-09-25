@@ -27,6 +27,6 @@ mod notation_tests {
         board.execute_move(game::Player::Black, "d5").unwrap();
         assert_eq!(notation::parse_notation(&board, &game::Player::White, "exd5").is_err(), false);
         assert_eq!(notation::parse_notation(&board, &game::Player::Black, "dxe4").is_err(), false);
-        assert_eq!(notation::parse_notation(&board, &game::Player::Black, "de4").is_err(), true);
+        assert_eq!(notation::parse_notation(&board, &game::Player::Black, "xa6").is_err(), true);
     }
 }

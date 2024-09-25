@@ -44,14 +44,12 @@ pub fn parse_notation(
     notation: &str
 ) -> Result<pieces::PieceMove, pieces::MoveError> {
     let re = Regex::new(
-        r"(?:(?P<piece_type>[KkQqRrBbNn])?(?P<src_file>[a-h])?(?P<src_rank>[1-8])?x?(?P<dst_file>[a-h])(?P<dst_rank>[1-8])(?:=(?P<promotion>[QqRrBbNn]))?(?P<check>[+#])?)$"
+        r"(?:(?P<piece_type>[kqrbn])?(?P<src_file>[a-h])?(?P<src_rank>[1-8])?x?(?P<dst_file>[a-h])(?P<dst_rank>[1-8])(?:=(?P<promotion>[qrbn]))?(?P<check>[+#])?)$"
     ).unwrap();
 
     if let Some(caps) = re.captures(notation) {
         let piece_type = pieces::PieceType::from(
-            caps
-                .name("piece_type")
-                .map_or('p', |m| m.as_str().chars().next().unwrap().to_ascii_lowercase())
+            caps.name("piece_type").map_or('p', |m| m.as_str().chars().next().unwrap())
         );
         let src_file = caps
             .name("src_file")
