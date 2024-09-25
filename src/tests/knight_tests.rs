@@ -2,6 +2,7 @@
 mod knight_tests {
     use crate::board;
     use crate::pieces;
+    use crate::game;
 
     // test knight L shaped movement
     #[test]
@@ -37,5 +38,23 @@ mod knight_tests {
         let knightg8 = &board.squares[board::convert_position_1d(6, 7)];
         assert_eq!(knightg8.get_type(), pieces::PieceType::Knight);
         assert_eq!(knightg8.can_move(&board, 4, 6), false);
+    }
+
+    // ensure knight can move into enemy square
+    #[test]
+    fn knight_capture() {
+        let mut board: board::Board = board::Board::new();
+        board.reset_board();
+
+        board.place_piece(game::Player::White, pieces::PieceType::Knight, 4, 6);
+        board.place_piece(game::Player::Black, pieces::PieceType::Knight, 3, 1);
+
+        let knightb1 = &board.squares[board::convert_position_1d(1, 0)];
+        assert_eq!(knightb1.get_type(), pieces::PieceType::Knight);
+        assert_eq!(knightb1.can_move(&board, 3, 1), true);
+
+        let knightg8 = &board.squares[board::convert_position_1d(6, 7)];
+        assert_eq!(knightg8.get_type(), pieces::PieceType::Knight);
+        assert_eq!(knightg8.can_move(&board, 4, 6), true);
     }
 }

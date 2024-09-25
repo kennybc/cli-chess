@@ -3,17 +3,6 @@ use crate::game;
 use crate::pieces;
 use regex::Regex;
 
-impl std::fmt::Display for pieces::MoveError {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        match self {
-            pieces::MoveError::InvalidNotation => write!(f, "Invalid notation syntax!"),
-            pieces::MoveError::InvalidMove => write!(f, "Invalid move!"),
-            pieces::MoveError::AmbiguousMove =>
-                write!(f, "Multiple pieces can make that move! Please disambiguate!"),
-        }
-    }
-}
-
 fn get_piece_candidates(
     board: &board::Board,
     player: &game::Player,

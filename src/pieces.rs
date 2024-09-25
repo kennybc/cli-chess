@@ -10,10 +10,40 @@ pub mod bishop;
 pub mod knight;
 pub mod pawn;
 
+#[derive(Debug)]
 pub enum MoveError {
     InvalidNotation,
     InvalidMove,
     AmbiguousMove,
+    InvalidCapture,
+    InvalidCheck,
+    InvalidCheckmate,
+    InvalidPromotion,
+}
+
+impl std::fmt::Display for pieces::MoveError {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            pieces::MoveError::InvalidNotation => write!(f, "Invalid notation syntax!"),
+            pieces::MoveError::InvalidMove => write!(f, "Invalid move!"),
+            pieces::MoveError::AmbiguousMove =>
+                write!(
+                    f,
+                    "Multiple pieces can make that move! Please disambiguate by providing a file, rank, or both."
+                ),
+            pieces::MoveError::InvalidCapture =>
+                write!(f, "That move is not a capture! Please omit the 'x'."),
+            pieces::MoveError::InvalidCheck =>
+                write!(f, "That move is not a check! Please omit the '+'."),
+            pieces::MoveError::InvalidCheckmate =>
+                write!(f, "That move is not a check! Please omit the '+'."),
+            pieces::MoveError::InvalidPromotion =>
+                write!(
+                    f,
+                    "Invalid promotion! Make sure the pawn is moving into the last rank and you specify a piece to promote into."
+                ),
+        }
+    }
 }
 
 #[derive(Debug, PartialEq)]
