@@ -30,6 +30,6 @@ impl pieces::Piece for Empty {
 
 impl std::fmt::Display for Empty {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, ".")
+        write!(f, " ")
     }
 }

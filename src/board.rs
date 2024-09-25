@@ -1,5 +1,4 @@
-#![allow(unused_variables)]
-#![allow(dead_code)]
+use colored::Colorize;
 
 use crate::notation;
 use crate::pieces;
@@ -213,9 +212,22 @@ impl std::fmt::Display for Board {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         let mut board_string = String::new();
         for (i, piece) in self.squares.iter().enumerate() {
-            board_string += &piece.to_string();
-            board_string += " ";
+            let mut piece_string = piece.to_string() + " ";
+            let row = i / 8;
             let col = i % 8;
+            if (row + col) % 2 == 0 {
+                piece_string = piece_string.on_truecolor(240, 240, 240).to_string();
+            } else {
+                piece_string = piece_string.on_truecolor(202, 202, 202).to_string();
+            }
+            if let Some(p) = piece.get_player() {
+                if p == game::Player::Black {
+                    piece_string = piece_string.red().to_string();
+                } else {
+                    piece_string = piece_string.blue().to_string();
+                }
+            }
+            board_string += &piece_string;
             if col == 7 {
                 board_string += "\n";
             }

@@ -53,9 +53,6 @@ impl pieces::Piece for King {
 
 impl std::fmt::Display for King {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        match self.data.player {
-            game::Player::White => write!(f, "♔"),
-            game::Player::Black => write!(f, "♚"),
-        }
+        write!(f, "♚")
     }
 }

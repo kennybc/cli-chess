@@ -65,3 +65,7 @@ pub struct PieceData {
     pub rank: i8,
     pub last_move: Option<(i32, PieceMove)>,
 }
+
+pub fn invert_color(s: &str) -> String {
+    format!("\x1b[7m{}\x1b[0m", s) // ANSI code for inverted colors
+}

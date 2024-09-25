@@ -76,9 +76,6 @@ impl pieces::Piece for Rook {
 
 impl std::fmt::Display for Rook {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        match self.data.player {
-            game::Player::White => write!(f, "♖"),
-            game::Player::Black => write!(f, "♜"),
-        }
+        write!(f, "♜")
     }
 }

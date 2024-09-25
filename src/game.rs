@@ -33,6 +33,7 @@ pub fn game_loop() {
             let notation = notation.trim();
 
             if notation == "" {
+                print!("{esc}[2J{esc}[1;1H", esc = 27 as char);
                 println!("{board}");
             } else if notation == "draw" {
                 board.set_state(GameState::Draw);
@@ -42,6 +43,7 @@ pub fn game_loop() {
                 let result = board.execute_move(p, &notation);
                 match result {
                     Ok(_) => {
+                        print!("{esc}[2J{esc}[1;1H", esc = 27 as char);
                         println!("{board}");
                         board.set_state(GameState::Playing(other_player(p)));
                     }
