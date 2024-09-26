@@ -2,6 +2,7 @@ use crate::game;
 use crate::pieces;
 use crate::board;
 
+#[derive(Clone)]
 pub struct Knight {
     data: pieces::PieceData,
 }

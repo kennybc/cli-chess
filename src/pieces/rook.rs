@@ -1,9 +1,8 @@
-#![allow(unused_variables)]
-
 use crate::game;
 use crate::pieces;
 use crate::board;
 
+#[derive(Clone)]
 pub struct Rook {
     data: pieces::PieceData,
 }

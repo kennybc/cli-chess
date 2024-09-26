@@ -2,6 +2,7 @@ use crate::game;
 use crate::pieces;
 use crate::board;
 
+#[derive(Clone)]
 pub struct Pawn {
     data: pieces::PieceData,
 }
@@ -35,31 +36,31 @@ impl pieces::Piece for Pawn {
             // the rank that the pawn can reach and attack
             let reach = self.data.rank + self.get_direction_coeff();
             if rank == reach || rank == self.data.rank {
-                if rank == self.data.rank {
-                    rank = reach;
-                    println!("{rank}");
-                }
                 if reach < 0 || reach > 7 {
                     return false;
                 }
-                if
-                    board.squares[board::convert_position_1d(file, rank)].get_type() ==
-                    pieces::PieceType::Empty
-                {
-                    // en passant
-                    let en_passant_square =
-                        &board.squares[board::convert_position_1d(file, self.data.rank)];
-                    if en_passant_square.get_type() == pieces::PieceType::Pawn {
-                        return match en_passant_square.get_last_move() {
-                            None => false,
-                            Some(tuple) =>
-                                tuple.0 == board.get_turn() - 1 &&
-                                    (tuple.1.src_rank - tuple.1.dst_rank).abs() == 2,
-                        };
+                if rank == self.data.rank {
+                    rank = reach;
+
+                    if
+                        board.squares[board::convert_position_1d(file, rank)].get_type() ==
+                        pieces::PieceType::Empty
+                    {
+                        // en passant
+                        let en_passant_square =
+                            &board.squares[board::convert_position_1d(file, self.data.rank)];
+                        if en_passant_square.get_type() == pieces::PieceType::Pawn {
+                            return match en_passant_square.get_last_move() {
+                                None => false,
+                                Some(tuple) =>
+                                    tuple.0 == board.get_turn() - 1 &&
+                                        (tuple.1.src_rank - tuple.1.dst_rank).abs() == 2,
+                            };
+                        }
                     }
                 } else {
                     // true for any non-empty square: pawn can attack enemy or defend ally
-                    return true;
+                    return rank == reach;
                 }
             }
         }

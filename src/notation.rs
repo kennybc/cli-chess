@@ -44,7 +44,7 @@ pub fn parse_notation(
     notation: &str
 ) -> Result<pieces::PieceMove, pieces::MoveError> {
     let re = Regex::new(
-        r"(?:(?P<piece_type>[kqrbn])?(?P<src_file>[a-h])?(?P<src_rank>[1-8])?x?(?P<dst_file>[a-h])(?P<dst_rank>[1-8])(?:=(?P<promotion>[qrbn]))?(?P<check>[+#])?)$"
+        r"(?:(?P<piece_type>[kqrbn])?(?P<src_file>[a-h])?(?P<src_rank>[1-8])?(?P<capture>x)?(?P<dst_file>[a-h])(?P<dst_rank>[1-8])(?:=(?P<promotion>[qrbn]))?(?P<check>[+#])?)$"
     ).unwrap();
 
     if let Some(caps) = re.captures(notation) {
@@ -61,21 +61,14 @@ pub fn parse_notation(
             caps.name("dst_file").unwrap().as_str().chars().next().unwrap()
         );
         let dst_rank = caps.name("dst_rank").unwrap().as_str().parse::<i8>().unwrap() - 1;
-        /*let promotion = caps.name("promotion").map_or("", |m| m.as_str());
+        let capture = caps.name("capture").map_or(false, |_| true);
+        let promotion = caps.name("promotion").map_or("", |m| m.as_str());
         let check = caps.name("check").map_or("", |m| m.as_str());
-
-        println!("Piece: {piece_type:?}");
-        println!("Source File: {src_file:?}");
-        println!("Source Rank: {src_rank:?}");
-        println!("Destination File: {}", dst_file);
-        println!("Destination Rank: {}", dst_rank);
-        println!("Promotion: {}", promotion);
-        println!("Check: {}", check);*/
 
         // get all potential pieces that could make this move
         let candidates = get_piece_candidates(
-            board,
-            player,
+            &board,
+            &player,
             &piece_type,
             src_file,
             src_rank,
@@ -86,7 +79,21 @@ pub fn parse_notation(
             return Err(pieces::MoveError::InvalidMove);
         }
         if candidates.len() > 1 {
+            for candidate in candidates {
+                println!("{}:{}", candidate.0, candidate.1);
+            }
             return Err(pieces::MoveError::AmbiguousMove);
+        }
+
+        let piece = &board.squares[board::convert_position_1d(candidates[0].0, candidates[0].1)];
+        if capture && !piece.can_attack(board, dst_file, dst_rank) {
+            return Err(pieces::MoveError::InvalidCapture);
+        }
+        if check == "todo" {
+            return Err(pieces::MoveError::InvalidCheck);
+        }
+        if promotion == "todo" {
+            return Err(pieces::MoveError::InvalidPromotion);
         }
 
         return Ok(pieces::PieceMove {

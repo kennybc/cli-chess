@@ -1,3 +1,5 @@
+use dyn_clone::DynClone;
+
 use crate::game;
 use crate::board;
 use crate::pieces;
@@ -14,10 +16,10 @@ pub mod pawn;
 pub enum MoveError {
     InvalidNotation,
     InvalidMove,
+    MoveIntoCheck,
     AmbiguousMove,
     InvalidCapture,
     InvalidCheck,
-    InvalidCheckmate,
     InvalidPromotion,
 }
 
@@ -26,6 +28,7 @@ impl std::fmt::Display for pieces::MoveError {
         match self {
             pieces::MoveError::InvalidNotation => write!(f, "Invalid notation syntax!"),
             pieces::MoveError::InvalidMove => write!(f, "Invalid move!"),
+            pieces::MoveError::MoveIntoCheck => write!(f, "That move puts your king in danger!"),
             pieces::MoveError::AmbiguousMove =>
                 write!(
                     f,
@@ -34,9 +37,7 @@ impl std::fmt::Display for pieces::MoveError {
             pieces::MoveError::InvalidCapture =>
                 write!(f, "That move is not a capture! Please omit the 'x'."),
             pieces::MoveError::InvalidCheck =>
-                write!(f, "That move is not a check! Please omit the '+'."),
-            pieces::MoveError::InvalidCheckmate =>
-                write!(f, "That move is not a check! Please omit the '+'."),
+                write!(f, "That move is not a check! Please omit the '+' or '#'."),
             pieces::MoveError::InvalidPromotion =>
                 write!(
                     f,
@@ -46,7 +47,7 @@ impl std::fmt::Display for pieces::MoveError {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub struct PieceMove {
     pub piece_type: PieceType,
     pub src_file: i8,
@@ -80,7 +81,7 @@ impl From<char> for PieceType {
     }
 }
 
-pub trait Piece: std::fmt::Display {
+pub trait Piece: DynClone + std::fmt::Display {
     fn get_player(&self) -> Option<game::Player>;
     fn get_type(&self) -> PieceType;
     fn can_attack(&self, board: &board::Board, file: i8, rank: i8) -> bool;
@@ -89,6 +90,7 @@ pub trait Piece: std::fmt::Display {
     fn set_last_move(&mut self, turn: i32, mv: pieces::PieceMove);
 }
 
+#[derive(Clone)]
 pub struct PieceData {
     pub player: game::Player,
     pub file: i8,
