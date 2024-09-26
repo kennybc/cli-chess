@@ -2,6 +2,7 @@ use crate::pieces;
 use crate::board;
 use crate::game;
 
+#[derive(Clone)]
 pub struct Empty {}
 
 impl pieces::Piece for Empty {

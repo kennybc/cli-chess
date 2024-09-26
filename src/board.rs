@@ -8,6 +8,8 @@ pub struct Board {
     pub turn: i32,
     pub state: game::GameState,
     pub squares: [Box<dyn pieces::Piece>; 64],
+    pub white_king: (i8, i8),
+    pub black_king: (i8, i8),
 }
 
 impl Board {
@@ -18,6 +20,8 @@ impl Board {
             squares: array_init::array_init(
                 |_| Box::new(pieces::empty::Empty {}) as Box<dyn pieces::Piece>
             ),
+            white_king: (0, 0),
+            black_king: (0, 0),
         };
         return board;
     }
@@ -64,6 +68,9 @@ impl Board {
         for i in 0..8 {
             self.place_piece(game::Player::Black, pieces::PieceType::Pawn, i, 6);
         }
+
+        self.white_king = (4, 0);
+        self.black_king = (4, 7);
     }
 
     // place a piece regardless of move validity
@@ -91,19 +98,21 @@ impl Board {
         player: game::Player,
         notation: &str
     ) -> Result<(), pieces::MoveError> {
+        let notation = notation.to_ascii_lowercase();
+
         // handle "special" castling notation first
-        if notation == "O-O" || notation == "O-O-O" {
+        if notation == "o-o" || notation == "o-o-o" {
             let castle_rank = match player {
                 game::Player::White => 0,
                 game::Player::Black => 7,
             };
             // king side castle
-            if notation == "O-O" && self.can_king_castle(castle_rank) {
+            if notation == "o-o" && self.can_king_castle(castle_rank) {
                 self.place_piece(player, pieces::PieceType::King, 6, castle_rank);
                 self.place_piece(player, pieces::PieceType::Rook, 5, castle_rank);
                 self.clear_square(4, castle_rank);
                 self.clear_square(7, castle_rank);
-            } else if notation == "O-O-O" && self.can_queen_castle(castle_rank) {
+            } else if notation == "o-o-o" && self.can_queen_castle(castle_rank) {
                 self.place_piece(player, pieces::PieceType::King, 2, castle_rank);
                 self.place_piece(player, pieces::PieceType::Rook, 3, castle_rank);
                 self.clear_square(4, castle_rank);
@@ -113,11 +122,27 @@ impl Board {
             }
             return Ok(());
         } else {
-            let piece_move = notation::parse_notation(self, &player, notation);
+            let piece_move = notation::parse_notation(self, &player, &notation);
             match piece_move {
                 Ok(mut mv) => {
+                    let mut removed_pieces: Vec<(i8, i8, Box<dyn pieces::Piece>)> = Vec::new();
+
                     let src_index = convert_position_1d(mv.src_file, mv.src_rank);
                     let dst_index = convert_position_1d(mv.dst_file, mv.dst_rank);
+
+                    let is_king_move =
+                        self.squares[src_index].get_type() == pieces::PieceType::King;
+                    // update stored king positions if it is a king move
+                    if is_king_move {
+                        match player {
+                            game::Player::White => {
+                                self.white_king = (mv.dst_file, mv.dst_rank);
+                            }
+                            game::Player::Black => {
+                                self.black_king = (mv.dst_file, mv.dst_rank);
+                            }
+                        }
+                    }
 
                     // check if it is en passant
                     if
@@ -129,15 +154,60 @@ impl Board {
                             game::Player::Black => -1,
                         };
 
-                        self.clear_square(mv.src_file, mv.src_rank);
+                        // temporarily save the removed pawn
+                        removed_pieces.push((
+                            mv.dst_file,
+                            mv.src_rank,
+                            dyn_clone::clone_box(
+                                &*self.squares[convert_position_1d(mv.dst_file, mv.src_rank)]
+                            ),
+                        ));
+
                         self.clear_square(mv.dst_file, mv.src_rank);
                         mv.dst_rank += direction_coef;
-                    } else {
-                        self.clear_square(mv.src_file, mv.src_rank);
                     }
+                    // temporary save the moved pieces
+                    removed_pieces.push((
+                        mv.dst_file,
+                        mv.dst_rank,
+                        dyn_clone::clone_box(
+                            &*self.squares[convert_position_1d(mv.dst_file, mv.dst_rank)]
+                        ),
+                    ));
+                    removed_pieces.push((
+                        mv.src_file,
+                        mv.src_rank,
+                        dyn_clone::clone_box(
+                            &*self.squares[convert_position_1d(mv.src_file, mv.src_rank)]
+                        ),
+                    ));
+                    self.clear_square(mv.src_file, mv.src_rank);
                     self.place_piece(player, mv.piece_type, mv.dst_file, mv.dst_rank);
+
+                    // if move results in being checked, undo the move and throw error
+                    if self.is_checked(player) {
+                        // undo moves
+                        for removed_piece in removed_pieces {
+                            self.squares[convert_position_1d(removed_piece.0, removed_piece.1)] =
+                                removed_piece.2;
+                        }
+
+                        if is_king_move {
+                            match player {
+                                game::Player::White => {
+                                    self.white_king = (mv.src_file, mv.src_rank);
+                                }
+                                game::Player::Black => {
+                                    self.black_king = (mv.src_file, mv.src_rank);
+                                }
+                            }
+                        }
+                        return Err(pieces::MoveError::MoveIntoCheck);
+                    }
+
                     self.squares[dst_index].set_last_move(self.turn, mv);
                     self.turn += 1;
+
                     return Ok(());
                 }
                 Err(e) => Err(e),
@@ -155,6 +225,18 @@ impl Board {
             }
         }
         return false;
+    }
+
+    // is a player under check?
+    fn is_checked(&self, player: game::Player) -> bool {
+        match player {
+            game::Player::White => {
+                self.is_under_attack(player, self.white_king.0, self.white_king.1)
+            }
+            game::Player::Black => {
+                self.is_under_attack(player, self.black_king.0, self.black_king.1)
+            }
+        }
     }
 
     // check if a player can castle (helper)

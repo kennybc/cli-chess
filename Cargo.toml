@@ -6,4 +6,5 @@ edition = "2021"
 [dependencies]
 array-init = "2.0"
 colored = "2.1.0"
+dyn-clone = "1.0.17"
 regex = "1.10.6"

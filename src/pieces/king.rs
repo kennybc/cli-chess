@@ -2,6 +2,7 @@ use crate::game;
 use crate::pieces;
 use crate::board;
 
+#[derive(Clone)]
 pub struct King {
     data: pieces::PieceData,
 }
@@ -35,11 +36,7 @@ impl pieces::Piece for King {
                 return false;
             }
         }
-        if board.is_under_attack(self.data.player, file, rank) {
-            return false;
-        } else {
-            return self.can_attack(board, file, rank);
-        }
+        return self.can_attack(board, file, rank);
     }
 
     fn get_last_move(&self) -> Option<&(i32, pieces::PieceMove)> {
