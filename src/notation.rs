@@ -1,6 +1,7 @@
 use crate::board;
 use crate::game;
 use crate::pieces;
+use crate::moves;
 use regex::Regex;
 
 fn get_piece_candidates(
@@ -42,7 +43,7 @@ pub fn parse_notation(
     board: &board::Board,
     player: &game::Player,
     notation: &str
-) -> Result<pieces::PieceMove, pieces::MoveError> {
+) -> Result<moves::PieceMove, moves::MoveError> {
     let re = Regex::new(
         r"(?:(?P<piece_type>[kqrbn])?(?P<src_file>[a-h])?(?P<src_rank>[1-8])?(?P<capture>x)?(?P<dst_file>[a-h])(?P<dst_rank>[1-8])(?:=(?P<promotion>[qrbn]))?(?P<check>[+#])?)$"
     ).unwrap();
@@ -76,27 +77,27 @@ pub fn parse_notation(
             dst_rank
         );
         if candidates.len() == 0 {
-            return Err(pieces::MoveError::InvalidMove);
+            return Err(moves::MoveError::InvalidMove);
         }
         if candidates.len() > 1 {
             for candidate in candidates {
                 println!("{}:{}", candidate.0, candidate.1);
             }
-            return Err(pieces::MoveError::AmbiguousMove);
+            return Err(moves::MoveError::AmbiguousMove);
         }
 
         let piece = &board.squares[board::convert_position_1d(candidates[0].0, candidates[0].1)];
         if capture && !piece.can_attack(board, dst_file, dst_rank) {
-            return Err(pieces::MoveError::InvalidCapture);
+            return Err(moves::MoveError::InvalidCapture);
         }
         if check == "todo" {
-            return Err(pieces::MoveError::InvalidCheck);
+            return Err(moves::MoveError::InvalidCheck);
         }
         if promotion == "todo" {
-            return Err(pieces::MoveError::InvalidPromotion);
+            return Err(moves::MoveError::InvalidPromotion);
         }
 
-        return Ok(pieces::PieceMove {
+        return Ok(moves::PieceMove {
             piece_type,
             src_file: candidates[0].0,
             src_rank: candidates[0].1,
@@ -104,7 +105,7 @@ pub fn parse_notation(
             dst_rank,
         });
     } else {
-        return Err(pieces::MoveError::InvalidNotation);
+        return Err(moves::MoveError::InvalidNotation);
     }
 }
 

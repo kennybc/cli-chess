@@ -1,6 +1,7 @@
 use crate::pieces;
 use crate::board;
 use crate::game;
+use crate::moves;
 
 #[derive(Clone)]
 pub struct Empty {}
@@ -22,11 +23,11 @@ impl pieces::Piece for Empty {
         return false;
     }
 
-    fn get_last_move(&self) -> Option<&(i32, pieces::PieceMove)> {
+    fn get_last_move(&self) -> Option<&(i32, moves::PieceMove)> {
         return None;
     }
 
-    fn set_last_move(&mut self, _: i32, _: pieces::PieceMove) {}
+    fn set_last_move(&mut self, _: i32, _: moves::PieceMove) {}
 }
 
 impl std::fmt::Display for Empty {

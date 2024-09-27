@@ -1,8 +1,10 @@
 use colored::Colorize;
 
+use crate::moves::PieceMove;
 use crate::notation;
 use crate::pieces;
 use crate::game;
+use crate::moves;
 
 pub struct Board {
     pub turn: i32,
@@ -97,7 +99,7 @@ impl Board {
         &mut self,
         player: game::Player,
         notation: &str
-    ) -> Result<(), pieces::MoveError> {
+    ) -> Result<moves::MoveOutcome, moves::MoveError> {
         let notation = notation.to_ascii_lowercase();
 
         // handle "special" castling notation first
@@ -106,21 +108,56 @@ impl Board {
                 game::Player::White => 0,
                 game::Player::Black => 7,
             };
+            let mut king_file: Option<i8> = None;
+            let mut rook_src_file: Option<i8> = None;
+            let mut rook_dst_file: Option<i8> = None;
             // king side castle
             if notation == "o-o" && self.can_king_castle(castle_rank) {
                 self.place_piece(player, pieces::PieceType::King, 6, castle_rank);
                 self.place_piece(player, pieces::PieceType::Rook, 5, castle_rank);
                 self.clear_square(4, castle_rank);
                 self.clear_square(7, castle_rank);
+                king_file = Some(6);
+                rook_src_file = Some(7);
+                rook_dst_file = Some(5);
             } else if notation == "o-o-o" && self.can_queen_castle(castle_rank) {
                 self.place_piece(player, pieces::PieceType::King, 2, castle_rank);
                 self.place_piece(player, pieces::PieceType::Rook, 3, castle_rank);
                 self.clear_square(4, castle_rank);
                 self.clear_square(0, castle_rank);
+                king_file = Some(2);
+                rook_src_file = Some(0);
+                rook_dst_file = Some(3);
             } else {
-                return Err(pieces::MoveError::InvalidMove);
+                return Err(moves::MoveError::InvalidMove);
             }
-            return Ok(());
+
+            let king_file = king_file.unwrap();
+            let rook_src_file = rook_src_file.unwrap();
+            let rook_dst_file = rook_dst_file.unwrap();
+
+            self.squares[convert_position_1d(king_file, castle_rank)].set_last_move(
+                self.turn,
+                PieceMove {
+                    piece_type: pieces::PieceType::King,
+                    src_file: 4,
+                    src_rank: castle_rank,
+                    dst_file: king_file,
+                    dst_rank: castle_rank,
+                }
+            );
+            self.squares[convert_position_1d(rook_dst_file, castle_rank)].set_last_move(
+                self.turn,
+                PieceMove {
+                    piece_type: pieces::PieceType::King,
+                    src_file: rook_src_file,
+                    src_rank: castle_rank,
+                    dst_file: rook_dst_file,
+                    dst_rank: castle_rank,
+                }
+            );
+            self.turn += 1;
+            return Ok(moves::MoveOutcome::Continue);
         } else {
             let piece_move = notation::parse_notation(self, &player, &notation);
             match piece_move {
@@ -184,8 +221,11 @@ impl Board {
                     self.clear_square(mv.src_file, mv.src_rank);
                     self.place_piece(player, mv.piece_type, mv.dst_file, mv.dst_rank);
 
+                    let (enemy_checking_pieces, ally_checking_pieces) =
+                        self.get_checking_pieces(player);
+
                     // if move results in being checked, undo the move and throw error
-                    if self.is_checked(player) {
+                    if enemy_checking_pieces.len() > 0 {
                         // undo moves
                         for removed_piece in removed_pieces {
                             self.squares[convert_position_1d(removed_piece.0, removed_piece.1)] =
@@ -202,41 +242,50 @@ impl Board {
                                 }
                             }
                         }
-                        return Err(pieces::MoveError::MoveIntoCheck);
+                        return Err(moves::MoveError::MoveIntoCheck);
                     }
 
                     self.squares[dst_index].set_last_move(self.turn, mv);
                     self.turn += 1;
 
-                    return Ok(());
+                    return Ok(moves::MoveOutcome::Continue);
                 }
                 Err(e) => Err(e),
             }
         }
     }
 
-    // is a square under attack? (considering the board from perspective of a defending player)
-    pub fn is_under_attack(&self, defender: game::Player, file: i8, rank: i8) -> bool {
-        for i in 0..64 {
-            if let Some(p) = self.squares[i].get_player() {
-                if p != defender && self.squares[i].can_attack(self, file, rank) {
-                    return true;
+    // returns a tuple (0, 1) where:
+    // 0: a list of enemy pieces attacking friendly king
+    // 1: a list of friendly pieces attacking enemy king
+    fn get_checking_pieces(&self, defender: game::Player) -> (Vec<(i8, i8)>, Vec<(i8, i8)>) {
+        let mut enemies: Vec<(i8, i8)> = Vec::new();
+        let mut allies: Vec<(i8, i8)> = Vec::new();
+
+        let (king, enemy_king) = match defender {
+            game::Player::White => (self.white_king, self.black_king),
+            game::Player::Black => (self.black_king, self.white_king),
+        };
+
+        for f in 0..8 {
+            for r in 0..8 {
+                let attacker = &self.squares[convert_position_1d(f, r)];
+                if let Some(p) = attacker.get_player() {
+                    // if enemy piece, check if can attack given square
+                    if p != defender {
+                        if attacker.can_attack(self, king.0, king.1) {
+                            enemies.push((f, r));
+                        }
+                    } else {
+                        // if friendly piece, check if can attack enemy king
+                        if attacker.can_attack(self, enemy_king.0, enemy_king.1) {
+                            allies.push((f, r));
+                        }
+                    }
                 }
             }
         }
-        return false;
-    }
-
-    // is a player under check?
-    fn is_checked(&self, player: game::Player) -> bool {
-        match player {
-            game::Player::White => {
-                self.is_under_attack(player, self.white_king.0, self.white_king.1)
-            }
-            game::Player::Black => {
-                self.is_under_attack(player, self.black_king.0, self.black_king.1)
-            }
-        }
+        return (enemies, allies);
     }
 
     // check if a player can castle (helper)
@@ -269,10 +318,15 @@ impl Board {
             // ensure that king will not pass through check during castle
             let king_path = if rook_file == 0 { 2..5 } else { 4..7 };
             for i in king_path {
-                if self.is_under_attack(defender, i, castle_rank) {
-                    return false;
+                for j in 0..64 {
+                    let attacker = &self.squares[j];
+                    if let Some(p) = attacker.get_player() {
+                        // if enemy piece, check if can attack given square
+                        if p != defender && attacker.can_attack(self, i, castle_rank) {
+                            return false;
+                        }
+                    }
                 }
-
                 return true;
             }
         }
