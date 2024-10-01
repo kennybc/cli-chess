@@ -69,12 +69,12 @@ impl pieces::Piece for Pawn {
     }
 
     fn can_move(&self, board: &board::Board, file: i8, rank: i8) -> bool {
-        if self.can_attack(board, file, rank) {
-            return true;
-        }
-
         let target = &board.squares[board::convert_position_1d(file, rank)];
-
+        if let Some(p) = target.get_player() {
+            if self.data.player == p {
+                return false;
+            }
+        }
         // pawn move within same file (non-capture move)
         if file == self.data.file {
             // target position already occupied
@@ -89,6 +89,10 @@ impl pieces::Piece for Pawn {
                 None => diff == 1 || diff == 2,
                 Some(_) => diff == 1,
             };
+        }
+
+        if target.get_type() != pieces::PieceType::Empty && self.can_attack(board, file, rank) {
+            return true;
         }
 
         return false;

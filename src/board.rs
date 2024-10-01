@@ -1,6 +1,5 @@
 use colored::Colorize;
 
-use crate::moves::PieceMove;
 use crate::notation;
 use crate::pieces;
 use crate::game;
@@ -108,56 +107,39 @@ impl Board {
                 game::Player::White => 0,
                 game::Player::Black => 7,
             };
-            let mut king_file: Option<i8> = None;
-            let mut rook_src_file: Option<i8> = None;
-            let mut rook_dst_file: Option<i8> = None;
             // king side castle
-            if notation == "o-o" && self.can_king_castle(castle_rank) {
-                self.place_piece(player, pieces::PieceType::King, 6, castle_rank);
-                self.place_piece(player, pieces::PieceType::Rook, 5, castle_rank);
-                self.clear_square(4, castle_rank);
-                self.clear_square(7, castle_rank);
-                king_file = Some(6);
-                rook_src_file = Some(7);
-                rook_dst_file = Some(5);
-            } else if notation == "o-o-o" && self.can_queen_castle(castle_rank) {
-                self.place_piece(player, pieces::PieceType::King, 2, castle_rank);
-                self.place_piece(player, pieces::PieceType::Rook, 3, castle_rank);
-                self.clear_square(4, castle_rank);
-                self.clear_square(0, castle_rank);
-                king_file = Some(2);
-                rook_src_file = Some(0);
-                rook_dst_file = Some(3);
+            if notation == "o-o" {
+                let can_castle = self.can_king_castle(castle_rank);
+                match can_castle {
+                    Ok(_) => {
+                        self.place_piece(player, pieces::PieceType::King, 6, castle_rank);
+                        self.place_piece(player, pieces::PieceType::Rook, 5, castle_rank);
+                        self.clear_square(4, castle_rank);
+                        self.clear_square(7, castle_rank);
+                        self.turn += 1;
+                        return Ok(moves::MoveOutcome::Continue);
+                    }
+                    Err(e) => {
+                        return Err(e);
+                    }
+                }
+            } else if notation == "o-o-o" {
+                match self.can_queen_castle(castle_rank) {
+                    Ok(_) => {
+                        self.place_piece(player, pieces::PieceType::King, 2, castle_rank);
+                        self.place_piece(player, pieces::PieceType::Rook, 3, castle_rank);
+                        self.clear_square(4, castle_rank);
+                        self.clear_square(0, castle_rank);
+                        self.turn += 1;
+                        return Ok(moves::MoveOutcome::Continue);
+                    }
+                    Err(e) => {
+                        return Err(e);
+                    }
+                }
             } else {
                 return Err(moves::MoveError::InvalidMove);
             }
-
-            let king_file = king_file.unwrap();
-            let rook_src_file = rook_src_file.unwrap();
-            let rook_dst_file = rook_dst_file.unwrap();
-
-            self.squares[convert_position_1d(king_file, castle_rank)].set_last_move(
-                self.turn,
-                PieceMove {
-                    piece_type: pieces::PieceType::King,
-                    src_file: 4,
-                    src_rank: castle_rank,
-                    dst_file: king_file,
-                    dst_rank: castle_rank,
-                }
-            );
-            self.squares[convert_position_1d(rook_dst_file, castle_rank)].set_last_move(
-                self.turn,
-                PieceMove {
-                    piece_type: pieces::PieceType::King,
-                    src_file: rook_src_file,
-                    src_rank: castle_rank,
-                    dst_file: rook_dst_file,
-                    dst_rank: castle_rank,
-                }
-            );
-            self.turn += 1;
-            return Ok(moves::MoveOutcome::Continue);
         } else {
             let piece_move = notation::parse_notation(self, &player, &notation);
             match piece_move {
@@ -245,6 +227,28 @@ impl Board {
                         return Err(moves::MoveError::MoveIntoCheck);
                     }
 
+                    if ally_checking_pieces.len() > 0 {
+                        let mut can_stop_checkmate = false;
+                        for attacker in ally_checking_pieces {
+                            if
+                                self.can_stop_check(
+                                    player,
+                                    self.squares[
+                                        convert_position_1d(attacker.0, attacker.1)
+                                    ].get_type(),
+                                    attacker.0,
+                                    attacker.1
+                                )
+                            {
+                                can_stop_checkmate = true;
+                                break;
+                            }
+                        }
+                        if !can_stop_checkmate {
+                            return Ok(moves::MoveOutcome::Checkmate);
+                        }
+                    }
+
                     self.squares[dst_index].set_last_move(self.turn, mv);
                     self.turn += 1;
 
@@ -289,9 +293,9 @@ impl Board {
     }
 
     // check if a player can castle (helper)
-    fn can_castle(&mut self, castle_rank: i8, rook_file: i8) -> bool {
+    fn can_castle(&mut self, castle_rank: i8, rook_file: i8) -> Result<(), moves::MoveError> {
         if castle_rank != 0 && castle_rank != 7 {
-            return false;
+            return Err(moves::MoveError::InvalidMove);
         }
         let king = &self.squares[convert_position_1d(4, castle_rank)];
         let rook = &self.squares[convert_position_1d(rook_file, castle_rank)];
@@ -311,36 +315,108 @@ impl Board {
                     self.squares[convert_position_1d(i, castle_rank)].get_type() !=
                     pieces::PieceType::Empty
                 {
-                    return false;
+                    return Err(moves::MoveError::InvalidMove);
                 }
             }
 
             // ensure that king will not pass through check during castle
-            let king_path = if rook_file == 0 { 2..5 } else { 4..7 };
-            for i in king_path {
-                for j in 0..64 {
-                    let attacker = &self.squares[j];
-                    if let Some(p) = attacker.get_player() {
-                        // if enemy piece, check if can attack given square
-                        if p != defender && attacker.can_attack(self, i, castle_rank) {
-                            return false;
+            if rook_file == 0 {
+                return match self.is_path_under_attack(defender, 2, castle_rank, 4, castle_rank) {
+                    true => {
+                        return Err(moves::MoveError::MoveIntoCheck);
+                    }
+                    false => Ok(()),
+                };
+            } else {
+                return match self.is_path_under_attack(defender, 4, castle_rank, 6, castle_rank) {
+                    true => {
+                        return Err(moves::MoveError::MoveIntoCheck);
+                    }
+                    false => Ok(()),
+                };
+            }
+        }
+        return Err(moves::MoveError::InvalidMove);
+    }
+
+    // can a player castle king side?
+    fn can_king_castle(&mut self, castle_rank: i8) -> Result<(), moves::MoveError> {
+        return self.can_castle(castle_rank, 7);
+    }
+
+    // can a player castle queen side?
+    fn can_queen_castle(&mut self, castle_rank: i8) -> Result<(), moves::MoveError> {
+        return self.can_castle(castle_rank, 0);
+    }
+
+    pub fn is_path_under_attack(
+        &self,
+        defender: game::Player,
+        path_start_file: i8,
+        path_start_rank: i8,
+        path_end_file: i8,
+        path_end_rank: i8
+    ) -> bool {
+        let diff_y = (path_end_rank - path_start_rank).abs();
+        let diff_x = (path_end_file - path_start_file).abs();
+
+        // check if it's a valid path
+        if diff_y == diff_x || diff_y == 0 || diff_x == 0 {
+            for i in 0..64 {
+                let attacker = &self.squares[i];
+                if let Some(p) = attacker.get_player() {
+                    let mut curr_file = path_start_file;
+                    let mut curr_rank = path_start_rank;
+                    while
+                        (curr_file - path_end_file).abs() > 1 ||
+                        (curr_rank - path_end_rank).abs() > 1
+                    {
+                        if p != defender && attacker.can_move(self, curr_file, curr_rank) {
+                            return true;
+                        }
+                        if curr_file > path_end_file {
+                            curr_file -= 1;
+                        } else if curr_file < path_end_file {
+                            curr_file += 1;
+                        }
+                        if curr_rank > path_end_rank {
+                            curr_rank -= 1;
+                        } else if curr_rank < path_end_rank {
+                            curr_rank += 1;
                         }
                     }
                 }
-                return true;
             }
         }
         return false;
     }
 
-    // can a player castle king side?
-    fn can_king_castle(&mut self, castle_rank: i8) -> bool {
-        return self.can_castle(castle_rank, 7);
-    }
+    fn can_stop_check(
+        &self,
+        attacker: game::Player,
+        attacker_type: pieces::PieceType,
+        attacker_file: i8,
+        attacker_rank: i8
+    ) -> bool {
+        let king = match attacker {
+            game::Player::White => self.black_king,
+            game::Player::Black => self.white_king,
+        };
 
-    // can a player castle queen side?
-    fn can_queen_castle(&mut self, castle_rank: i8) -> bool {
-        return self.can_castle(castle_rank, 0);
+        // knight can't be blocked, don't check for it
+        if attacker_type == pieces::PieceType::Knight {
+            for i in 0..64 {
+                let piece = &self.squares[i];
+                if let Some(p) = piece.get_player() {
+                    if p != attacker && piece.can_move(self, attacker_file, attacker_rank) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+        // the player inflicting check is "defending" the path between the checking piece and the enemy king
+        return self.is_path_under_attack(attacker, attacker_file, attacker_rank, king.0, king.1);
     }
 }
 

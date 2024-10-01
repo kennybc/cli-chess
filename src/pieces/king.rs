@@ -28,7 +28,7 @@ impl pieces::Piece for King {
     fn can_attack(&self, _: &board::Board, file: i8, rank: i8) -> bool {
         let diff_y = (rank - self.data.rank).abs();
         let diff_x = (file - self.data.file).abs();
-        return diff_y <= 1 && diff_x <= 1;
+        return diff_y <= 1 && diff_x <= 1 && !(diff_x == 0 && diff_y == 0);
     }
 
     fn can_move(&self, board: &board::Board, file: i8, rank: i8) -> bool {

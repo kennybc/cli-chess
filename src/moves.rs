@@ -2,10 +2,8 @@ use crate::pieces;
 
 pub enum MoveOutcome {
     Continue,
-    DrawByInsufficientMaterial,
-    DrawByRepetition,
-    CheckmateWhiteWins,
-    CheckmateBlackWins,
+    Draw,
+    Checkmate,
 }
 
 #[derive(Debug)]
