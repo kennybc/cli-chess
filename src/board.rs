@@ -259,6 +259,15 @@ impl Board {
         }
     }
 
+    pub fn attempt_move(
+        &mut self,
+        player: game::Player,
+        mv: moves::PieceMove,
+        temporary: bool
+    ) -> Result<moves::MoveOutcome, moves::MoveError> {
+        return Ok(moves::MoveOutcome::Continue);
+    }
+
     // returns a tuple (0, 1) where:
     // 0: a list of enemy pieces attacking friendly king
     // 1: a list of friendly pieces attacking enemy king
@@ -368,9 +377,10 @@ impl Board {
                     let mut curr_file = path_start_file;
                     let mut curr_rank = path_start_rank;
                     while
-                        (curr_file - path_end_file).abs() > 1 ||
-                        (curr_rank - path_end_rank).abs() > 1
+                        (curr_file - path_end_file).abs() > 0 ||
+                        (curr_rank - path_end_rank).abs() > 0
                     {
+                        println!("{i} can move: {}", attacker.can_move(self, curr_file, curr_rank));
                         if p != defender && attacker.can_move(self, curr_file, curr_rank) {
                             return true;
                         }
