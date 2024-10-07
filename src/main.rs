@@ -2,6 +2,7 @@ mod game;
 mod pieces;
 mod board;
 mod notation;
+mod moves;
 
 #[cfg(test)]
 mod tests;

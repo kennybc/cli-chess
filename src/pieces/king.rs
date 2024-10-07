@@ -1,6 +1,7 @@
 use crate::game;
 use crate::pieces;
 use crate::board;
+use crate::moves;
 
 #[derive(Clone)]
 pub struct King {
@@ -27,7 +28,7 @@ impl pieces::Piece for King {
     fn can_attack(&self, _: &board::Board, file: i8, rank: i8) -> bool {
         let diff_y = (rank - self.data.rank).abs();
         let diff_x = (file - self.data.file).abs();
-        return diff_y <= 1 && diff_x <= 1;
+        return diff_y <= 1 && diff_x <= 1 && !(diff_x == 0 && diff_y == 0);
     }
 
     fn can_move(&self, board: &board::Board, file: i8, rank: i8) -> bool {
@@ -36,14 +37,21 @@ impl pieces::Piece for King {
                 return false;
             }
         }
-        return self.can_attack(board, file, rank);
+        let mv = moves::PieceMove {
+            piece_type: pieces::PieceType::King,
+            src_file: self.data.file,
+            src_rank: self.data.rank,
+            dst_file: file,
+            dst_rank: rank,
+        };
+        return board.clone().piece_can_move(self.data.player, mv);
     }
 
-    fn get_last_move(&self) -> Option<&(i32, pieces::PieceMove)> {
+    fn get_last_move(&self) -> Option<&(i32, moves::PieceMove)> {
         return self.data.last_move.as_ref();
     }
 
-    fn set_last_move(&mut self, turn: i32, mv: pieces::PieceMove) {
+    fn set_last_move(&mut self, turn: i32, mv: moves::PieceMove) {
         self.data.last_move = Some((turn, mv));
     }
 }

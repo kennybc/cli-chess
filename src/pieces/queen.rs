@@ -1,6 +1,7 @@
 use crate::game;
 use crate::pieces;
 use crate::board;
+use crate::moves;
 
 #[derive(Clone)]
 pub struct Queen {
@@ -46,8 +47,6 @@ impl pieces::Piece for Queen {
                 } else if curr_rank < rank {
                     curr_rank += 1;
                 }
-                let tmp = 8 * (7 - curr_rank) + curr_file;
-                println!("{tmp}");
                 if
                     board.squares[board::convert_position_1d(curr_file, curr_rank)].get_type() !=
                     pieces::PieceType::Empty
@@ -61,14 +60,26 @@ impl pieces::Piece for Queen {
     }
 
     fn can_move(&self, board: &board::Board, file: i8, rank: i8) -> bool {
-        return self.can_attack(board, file, rank);
+        if let Some(p) = board.squares[board::convert_position_1d(file, rank)].get_player() {
+            if self.data.player == p {
+                return false;
+            }
+        }
+        let mv = moves::PieceMove {
+            piece_type: pieces::PieceType::Queen,
+            src_file: self.data.file,
+            src_rank: self.data.rank,
+            dst_file: file,
+            dst_rank: rank,
+        };
+        return board.clone().piece_can_move(self.data.player, mv);
     }
 
-    fn get_last_move(&self) -> Option<&(i32, pieces::PieceMove)> {
+    fn get_last_move(&self) -> Option<&(i32, moves::PieceMove)> {
         return self.data.last_move.as_ref();
     }
 
-    fn set_last_move(&mut self, turn: i32, mv: pieces::PieceMove) {
+    fn set_last_move(&mut self, turn: i32, mv: moves::PieceMove) {
         self.data.last_move = Some((turn, mv));
     }
 }

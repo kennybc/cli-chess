@@ -1,6 +1,7 @@
 use crate::game;
 use crate::pieces;
 use crate::board;
+use crate::moves;
 
 #[derive(Clone)]
 pub struct Knight {
@@ -36,14 +37,21 @@ impl pieces::Piece for Knight {
                 return false;
             }
         }
-        return self.can_attack(board, file, rank);
+        let mv = moves::PieceMove {
+            piece_type: pieces::PieceType::Knight,
+            src_file: self.data.file,
+            src_rank: self.data.rank,
+            dst_file: file,
+            dst_rank: rank,
+        };
+        return board.clone().piece_can_move(self.data.player, mv);
     }
 
-    fn get_last_move(&self) -> Option<&(i32, pieces::PieceMove)> {
+    fn get_last_move(&self) -> Option<&(i32, moves::PieceMove)> {
         return self.data.last_move.as_ref();
     }
 
-    fn set_last_move(&mut self, turn: i32, mv: pieces::PieceMove) {
+    fn set_last_move(&mut self, turn: i32, mv: moves::PieceMove) {
         self.data.last_move = Some((turn, mv));
     }
 }

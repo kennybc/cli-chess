@@ -1,6 +1,7 @@
 use crate::game;
 use crate::pieces;
 use crate::board;
+use crate::moves;
 
 #[derive(Clone)]
 pub struct Pawn {
@@ -68,12 +69,12 @@ impl pieces::Piece for Pawn {
     }
 
     fn can_move(&self, board: &board::Board, file: i8, rank: i8) -> bool {
-        if self.can_attack(board, file, rank) {
-            return true;
-        }
-
         let target = &board.squares[board::convert_position_1d(file, rank)];
-
+        if let Some(p) = target.get_player() {
+            if self.data.player == p {
+                return false;
+            }
+        }
         // pawn move within same file (non-capture move)
         if file == self.data.file {
             // target position already occupied
@@ -90,14 +91,25 @@ impl pieces::Piece for Pawn {
             };
         }
 
+        if target.get_type() != pieces::PieceType::Empty {
+            let mv = moves::PieceMove {
+                piece_type: pieces::PieceType::Pawn,
+                src_file: self.data.file,
+                src_rank: self.data.rank,
+                dst_file: file,
+                dst_rank: rank,
+            };
+            return board.clone().piece_can_move(self.data.player, mv);
+        }
+
         return false;
     }
 
-    fn get_last_move(&self) -> Option<&(i32, pieces::PieceMove)> {
+    fn get_last_move(&self) -> Option<&(i32, moves::PieceMove)> {
         return self.data.last_move.as_ref();
     }
 
-    fn set_last_move(&mut self, turn: i32, mv: pieces::PieceMove) {
+    fn set_last_move(&mut self, turn: i32, mv: moves::PieceMove) {
         self.data.last_move = Some((turn, mv));
     }
 }
