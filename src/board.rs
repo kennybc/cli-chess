@@ -15,7 +15,7 @@ pub struct Board {
 
 impl Board {
     pub fn new() -> Board {
-        let board = Board {
+        Board {
             turn: 0,
             state: game::GameState::Playing(game::Player::White),
             squares: array_init::array_init(
@@ -23,8 +23,33 @@ impl Board {
             ),
             white_king: (0, 0),
             black_king: (0, 0),
+        }
+    }
+
+    pub fn clone(&self) -> Board {
+        let mut clone = Board {
+            turn: self.turn,
+            state: self.state,
+            squares: array_init::array_init(
+                |_| Box::new(pieces::empty::Empty {}) as Box<dyn pieces::Piece>
+            ),
+            white_king: (self.white_king.0, self.white_king.1),
+            black_king: (self.black_king.0, self.black_king.1),
         };
-        return board;
+        for f in 0..8 {
+            for r in 0..8 {
+                let piece = &self.squares[convert_position_1d(f, r)];
+                if let Some(p) = piece.get_player() {
+                    clone.squares[convert_position_1d(f, r)] = new_boxed_piece(
+                        p,
+                        piece.get_type(),
+                        f,
+                        r
+                    );
+                }
+            }
+        }
+        return clone;
     }
 
     pub fn get_turn(&self) -> i32 {
@@ -94,7 +119,124 @@ impl Board {
         self.squares[index] = Box::new(pieces::empty::Empty {}) as Box<dyn pieces::Piece>;
     }
 
+    pub fn piece_can_move(&self, player: game::Player, mv: moves::PieceMove) -> bool {
+        let piece = &self.squares[convert_position_1d(mv.src_file, mv.src_rank)];
+        if piece.can_attack(self, mv.dst_file, mv.dst_rank) {
+            return match self.clone().execute_move(player, mv) {
+                Ok(_) => true,
+                Err(_) => false,
+            };
+        }
+        return false;
+    }
+
     pub fn execute_move(
+        &mut self,
+        player: game::Player,
+        mut mv: moves::PieceMove
+    ) -> Result<moves::MoveOutcome, moves::MoveError> {
+        let mut removed_pieces: Vec<(i8, i8, Box<dyn pieces::Piece>)> = Vec::new();
+
+        let src_index = convert_position_1d(mv.src_file, mv.src_rank);
+        let dst_index = convert_position_1d(mv.dst_file, mv.dst_rank);
+
+        let is_king_move = self.squares[src_index].get_type() == pieces::PieceType::King;
+        // update stored king positions if it is a king move
+        if is_king_move {
+            match player {
+                game::Player::White => {
+                    self.white_king = (mv.dst_file, mv.dst_rank);
+                }
+                game::Player::Black => {
+                    self.black_king = (mv.dst_file, mv.dst_rank);
+                }
+            }
+        }
+
+        // check if it is en passant
+        if
+            self.squares[src_index].get_type() == pieces::PieceType::Pawn &&
+            mv.src_rank == mv.dst_rank
+        {
+            let direction_coef = match player {
+                game::Player::White => 1,
+                game::Player::Black => -1,
+            };
+
+            // temporarily save the removed pawn
+            removed_pieces.push((
+                mv.dst_file,
+                mv.src_rank,
+                dyn_clone::clone_box(&*self.squares[convert_position_1d(mv.dst_file, mv.src_rank)]),
+            ));
+
+            self.clear_square(mv.dst_file, mv.src_rank);
+            mv.dst_rank += direction_coef;
+        }
+        // temporary save the moved pieces
+        removed_pieces.push((
+            mv.dst_file,
+            mv.dst_rank,
+            dyn_clone::clone_box(&*self.squares[convert_position_1d(mv.dst_file, mv.dst_rank)]),
+        ));
+        removed_pieces.push((
+            mv.src_file,
+            mv.src_rank,
+            dyn_clone::clone_box(&*self.squares[convert_position_1d(mv.src_file, mv.src_rank)]),
+        ));
+        self.clear_square(mv.src_file, mv.src_rank);
+        self.place_piece(player, mv.piece_type, mv.dst_file, mv.dst_rank);
+
+        let (enemy_checking_pieces, ally_checking_pieces) = self.get_checking_pieces(player);
+
+        // if move results in being checked, undo the move and throw error
+        if enemy_checking_pieces.len() > 0 {
+            // undo moves
+            for removed_piece in removed_pieces {
+                self.squares[convert_position_1d(removed_piece.0, removed_piece.1)] =
+                    removed_piece.2;
+            }
+
+            if is_king_move {
+                match player {
+                    game::Player::White => {
+                        self.white_king = (mv.src_file, mv.src_rank);
+                    }
+                    game::Player::Black => {
+                        self.black_king = (mv.src_file, mv.src_rank);
+                    }
+                }
+            }
+            return Err(moves::MoveError::MoveIntoCheck);
+        }
+
+        if ally_checking_pieces.len() > 0 {
+            let mut can_stop_checkmate = false;
+            for attacker in ally_checking_pieces {
+                if
+                    self.can_stop_check(
+                        player,
+                        self.squares[convert_position_1d(attacker.0, attacker.1)].get_type(),
+                        attacker.0,
+                        attacker.1
+                    )
+                {
+                    can_stop_checkmate = true;
+                    break;
+                }
+            }
+            if !can_stop_checkmate {
+                return Ok(moves::MoveOutcome::Checkmate);
+            }
+        }
+
+        self.squares[dst_index].set_last_move(self.turn, mv);
+        self.turn += 1;
+
+        return Ok(moves::MoveOutcome::Continue);
+    }
+
+    pub fn execute_notation(
         &mut self,
         player: game::Player,
         notation: &str
@@ -143,129 +285,12 @@ impl Board {
         } else {
             let piece_move = notation::parse_notation(self, &player, &notation);
             match piece_move {
-                Ok(mut mv) => {
-                    let mut removed_pieces: Vec<(i8, i8, Box<dyn pieces::Piece>)> = Vec::new();
-
-                    let src_index = convert_position_1d(mv.src_file, mv.src_rank);
-                    let dst_index = convert_position_1d(mv.dst_file, mv.dst_rank);
-
-                    let is_king_move =
-                        self.squares[src_index].get_type() == pieces::PieceType::King;
-                    // update stored king positions if it is a king move
-                    if is_king_move {
-                        match player {
-                            game::Player::White => {
-                                self.white_king = (mv.dst_file, mv.dst_rank);
-                            }
-                            game::Player::Black => {
-                                self.black_king = (mv.dst_file, mv.dst_rank);
-                            }
-                        }
-                    }
-
-                    // check if it is en passant
-                    if
-                        self.squares[src_index].get_type() == pieces::PieceType::Pawn &&
-                        mv.src_rank == mv.dst_rank
-                    {
-                        let direction_coef = match player {
-                            game::Player::White => 1,
-                            game::Player::Black => -1,
-                        };
-
-                        // temporarily save the removed pawn
-                        removed_pieces.push((
-                            mv.dst_file,
-                            mv.src_rank,
-                            dyn_clone::clone_box(
-                                &*self.squares[convert_position_1d(mv.dst_file, mv.src_rank)]
-                            ),
-                        ));
-
-                        self.clear_square(mv.dst_file, mv.src_rank);
-                        mv.dst_rank += direction_coef;
-                    }
-                    // temporary save the moved pieces
-                    removed_pieces.push((
-                        mv.dst_file,
-                        mv.dst_rank,
-                        dyn_clone::clone_box(
-                            &*self.squares[convert_position_1d(mv.dst_file, mv.dst_rank)]
-                        ),
-                    ));
-                    removed_pieces.push((
-                        mv.src_file,
-                        mv.src_rank,
-                        dyn_clone::clone_box(
-                            &*self.squares[convert_position_1d(mv.src_file, mv.src_rank)]
-                        ),
-                    ));
-                    self.clear_square(mv.src_file, mv.src_rank);
-                    self.place_piece(player, mv.piece_type, mv.dst_file, mv.dst_rank);
-
-                    let (enemy_checking_pieces, ally_checking_pieces) =
-                        self.get_checking_pieces(player);
-
-                    // if move results in being checked, undo the move and throw error
-                    if enemy_checking_pieces.len() > 0 {
-                        // undo moves
-                        for removed_piece in removed_pieces {
-                            self.squares[convert_position_1d(removed_piece.0, removed_piece.1)] =
-                                removed_piece.2;
-                        }
-
-                        if is_king_move {
-                            match player {
-                                game::Player::White => {
-                                    self.white_king = (mv.src_file, mv.src_rank);
-                                }
-                                game::Player::Black => {
-                                    self.black_king = (mv.src_file, mv.src_rank);
-                                }
-                            }
-                        }
-                        return Err(moves::MoveError::MoveIntoCheck);
-                    }
-
-                    if ally_checking_pieces.len() > 0 {
-                        let mut can_stop_checkmate = false;
-                        for attacker in ally_checking_pieces {
-                            if
-                                self.can_stop_check(
-                                    player,
-                                    self.squares[
-                                        convert_position_1d(attacker.0, attacker.1)
-                                    ].get_type(),
-                                    attacker.0,
-                                    attacker.1
-                                )
-                            {
-                                can_stop_checkmate = true;
-                                break;
-                            }
-                        }
-                        if !can_stop_checkmate {
-                            return Ok(moves::MoveOutcome::Checkmate);
-                        }
-                    }
-
-                    self.squares[dst_index].set_last_move(self.turn, mv);
-                    self.turn += 1;
-
-                    return Ok(moves::MoveOutcome::Continue);
+                Ok(mv) => {
+                    return self.execute_move(player, mv);
                 }
                 Err(e) => Err(e),
             }
         }
-    }
-
-    pub fn attempt_move(
-        &mut self,
-        player: game::Player,
-        mv: moves::PieceMove,
-        temporary: bool
-    ) -> Result<moves::MoveOutcome, moves::MoveError> {
-        return Ok(moves::MoveOutcome::Continue);
     }
 
     // returns a tuple (0, 1) where:
@@ -359,7 +384,7 @@ impl Board {
     }
 
     pub fn is_path_under_attack(
-        &self,
+        &mut self,
         defender: game::Player,
         path_start_file: i8,
         path_start_rank: i8,
@@ -371,28 +396,37 @@ impl Board {
 
         // check if it's a valid path
         if diff_y == diff_x || diff_y == 0 || diff_x == 0 {
-            for i in 0..64 {
-                let attacker = &self.squares[i];
-                if let Some(p) = attacker.get_player() {
-                    let mut curr_file = path_start_file;
-                    let mut curr_rank = path_start_rank;
-                    while
-                        (curr_file - path_end_file).abs() > 0 ||
-                        (curr_rank - path_end_rank).abs() > 0
-                    {
-                        println!("{i} can move: {}", attacker.can_move(self, curr_file, curr_rank));
-                        if p != defender && attacker.can_move(self, curr_file, curr_rank) {
-                            return true;
-                        }
-                        if curr_file > path_end_file {
-                            curr_file -= 1;
-                        } else if curr_file < path_end_file {
-                            curr_file += 1;
-                        }
-                        if curr_rank > path_end_rank {
-                            curr_rank -= 1;
-                        } else if curr_rank < path_end_rank {
-                            curr_rank += 1;
+            for f in 0..8 {
+                for r in 0..8 {
+                    let attacker = &self.squares[convert_position_1d(f, r)];
+                    let attacker_type = attacker.get_type();
+                    if let Some(p) = attacker.get_player() {
+                        let mut curr_file = path_start_file;
+                        let mut curr_rank = path_start_rank;
+                        while
+                            (curr_file - path_end_file).abs() > 0 ||
+                            (curr_rank - path_end_rank).abs() > 0
+                        {
+                            let tmp_mv = moves::PieceMove {
+                                piece_type: attacker_type,
+                                src_file: f,
+                                src_rank: r,
+                                dst_file: curr_file,
+                                dst_rank: curr_rank,
+                            };
+                            if p != defender && self.piece_can_move(p, tmp_mv) {
+                                return true;
+                            }
+                            if curr_file > path_end_file {
+                                curr_file -= 1;
+                            } else if curr_file < path_end_file {
+                                curr_file += 1;
+                            }
+                            if curr_rank > path_end_rank {
+                                curr_rank -= 1;
+                            } else if curr_rank < path_end_rank {
+                                curr_rank += 1;
+                            }
                         }
                     }
                 }
@@ -402,7 +436,7 @@ impl Board {
     }
 
     fn can_stop_check(
-        &self,
+        &mut self,
         attacker: game::Player,
         attacker_type: pieces::PieceType,
         attacker_file: i8,
@@ -415,11 +449,20 @@ impl Board {
 
         // knight can't be blocked, don't check for it
         if attacker_type == pieces::PieceType::Knight {
-            for i in 0..64 {
-                let piece = &self.squares[i];
-                if let Some(p) = piece.get_player() {
-                    if p != attacker && piece.can_move(self, attacker_file, attacker_rank) {
-                        return true;
+            for f in 0..8 {
+                for r in 0..8 {
+                    let piece = &self.squares[convert_position_1d(f, r)];
+                    if let Some(p) = piece.get_player() {
+                        let tmp_mv = moves::PieceMove {
+                            piece_type: self.squares[convert_position_1d(f, r)].get_type(),
+                            src_file: f,
+                            src_rank: r,
+                            dst_file: attacker_file,
+                            dst_rank: attacker_rank,
+                        };
+                        if p != attacker && self.piece_can_move(p, tmp_mv) {
+                            return true;
+                        }
                     }
                 }
             }

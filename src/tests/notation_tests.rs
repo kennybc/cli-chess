@@ -23,8 +23,8 @@ mod notation_tests {
         let mut board: board::Board = board::Board::new();
         board.reset_board();
 
-        board.execute_move(game::Player::White, "e4").unwrap();
-        board.execute_move(game::Player::Black, "d5").unwrap();
+        board.execute_notation(game::Player::White, "e4").unwrap();
+        board.execute_notation(game::Player::Black, "d5").unwrap();
         assert_eq!(notation::parse_notation(&board, &game::Player::White, "exd5").is_err(), false);
         assert_eq!(notation::parse_notation(&board, &game::Player::Black, "dxe4").is_err(), false);
         assert_eq!(notation::parse_notation(&board, &game::Player::Black, "xa6").is_err(), true);

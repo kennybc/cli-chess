@@ -7,6 +7,7 @@ pub enum Player {
     Black,
 }
 
+#[derive(Copy, Clone)]
 pub enum GameState {
     Playing(Player),
     Won(Player),
@@ -40,7 +41,7 @@ pub fn game_loop() {
             } else if notation == "resign" {
                 board.set_state(GameState::Won(other_player(p)));
             } else {
-                let result = board.execute_move(p, &notation);
+                let result = board.execute_notation(p, &notation);
                 match result {
                     Ok(outcome) => {
                         print!("{esc}[2J{esc}[1;1H", esc = 27 as char);

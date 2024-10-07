@@ -62,7 +62,19 @@ impl pieces::Piece for Rook {
     }
 
     fn can_move(&self, board: &board::Board, file: i8, rank: i8) -> bool {
-        return self.can_attack(board, file, rank);
+        if let Some(p) = board.squares[board::convert_position_1d(file, rank)].get_player() {
+            if self.data.player == p {
+                return false;
+            }
+        }
+        let mv = moves::PieceMove {
+            piece_type: pieces::PieceType::Rook,
+            src_file: self.data.file,
+            src_rank: self.data.rank,
+            dst_file: file,
+            dst_rank: rank,
+        };
+        return board.clone().piece_can_move(self.data.player, mv);
     }
 
     fn get_last_move(&self) -> Option<&(i32, moves::PieceMove)> {

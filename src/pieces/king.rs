@@ -37,19 +37,14 @@ impl pieces::Piece for King {
                 return false;
             }
         }
-        if self.can_attack(board, file, rank) {
-            for i in 0..64 {
-                let piece = &board.squares[i];
-                if let Some(p) = piece.get_player() {
-                    if p != self.get_player().unwrap() && piece.can_move(board, file, rank) {
-                        return false;
-                    }
-                }
-            }
-            return true;
-        }
-
-        return false;
+        let mv = moves::PieceMove {
+            piece_type: pieces::PieceType::King,
+            src_file: self.data.file,
+            src_rank: self.data.rank,
+            dst_file: file,
+            dst_rank: rank,
+        };
+        return board.clone().piece_can_move(self.data.player, mv);
     }
 
     fn get_last_move(&self) -> Option<&(i32, moves::PieceMove)> {

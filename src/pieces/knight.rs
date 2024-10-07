@@ -37,7 +37,14 @@ impl pieces::Piece for Knight {
                 return false;
             }
         }
-        return self.can_attack(board, file, rank);
+        let mv = moves::PieceMove {
+            piece_type: pieces::PieceType::Knight,
+            src_file: self.data.file,
+            src_rank: self.data.rank,
+            dst_file: file,
+            dst_rank: rank,
+        };
+        return board.clone().piece_can_move(self.data.player, mv);
     }
 
     fn get_last_move(&self) -> Option<&(i32, moves::PieceMove)> {
