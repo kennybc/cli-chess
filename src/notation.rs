@@ -106,6 +106,13 @@ pub fn parse_notation(
             return Err(moves::MoveError::InvalidCheck);
         }
         if let Some(p) = promotion {
+            let promotion_rank = match player {
+                game::Player::White => 7,
+                game::Player::Black => 0,
+            };
+            if piece_type != pieces::PieceType::Pawn || dst_rank != promotion_rank {
+                return Err(moves::MoveError::InvalidPromotion);
+            }
             piece_type = p;
         }
 
