@@ -133,6 +133,8 @@ impl Board {
         return false;
     }
 
+    // clears a src square and places a piece at dst square
+    // does not check if piece can MOVE there or not, just whether the resulting position is valid
     fn execute_move(
         &mut self,
         player: Option<game::Player>,
@@ -470,13 +472,13 @@ impl Board {
                             (curr_file - path_end_file).abs() > 0 ||
                             (curr_rank - path_end_rank).abs() > 0
                         {
-                            let tmp_mv = moves::PieceMove {
-                                piece_type: attacker_type,
-                                src_file: f,
-                                src_rank: r,
-                                dst_file: curr_file,
-                                dst_rank: curr_rank,
-                            };
+                            let tmp_mv = moves::PieceMove::new(
+                                attacker_type,
+                                f,
+                                r,
+                                curr_file,
+                                curr_rank
+                            );
                             if p != defender && self.piece_can_move(p, tmp_mv) {
                                 return true;
                             }
@@ -529,13 +531,10 @@ impl Board {
                 dst_file < 8 &&
                 dst_rank >= 0 &&
                 dst_rank < 8 &&
-                self.piece_can_move(other_player(attacker), PieceMove {
-                    piece_type: pieces::PieceType::King,
-                    src_file: king.0,
-                    src_rank: king.1,
-                    dst_file,
-                    dst_rank,
-                })
+                self.piece_can_move(
+                    other_player(attacker),
+                    PieceMove::new(pieces::PieceType::King, king.0, king.1, dst_file, dst_rank)
+                )
             {
                 return true;
             }
@@ -547,13 +546,13 @@ impl Board {
                 for r in 0..8 {
                     let piece = &self.squares[convert_position_1d(f, r)];
                     if let Some(p) = piece.get_player() {
-                        let tmp_mv = moves::PieceMove {
-                            piece_type: self.squares[convert_position_1d(f, r)].get_type(),
-                            src_file: f,
-                            src_rank: r,
-                            dst_file: attacker_file,
-                            dst_rank: attacker_rank,
-                        };
+                        let tmp_mv = moves::PieceMove::new(
+                            self.squares[convert_position_1d(f, r)].get_type(),
+                            f,
+                            r,
+                            attacker_file,
+                            attacker_rank
+                        );
                         if p != attacker && self.piece_can_move(p, tmp_mv) {
                             return true;
                         }

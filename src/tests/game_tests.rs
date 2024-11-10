@@ -38,7 +38,6 @@ mod game_tests {
     }
 
     fn result_to_state(result: &str) -> game::GameState {
-        println!("{result}");
         match result {
             "1-0" => game::GameState::Won(game::Player::White),
             "0-1" => game::GameState::Won(game::Player::Black),

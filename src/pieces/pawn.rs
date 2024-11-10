@@ -92,13 +92,13 @@ impl pieces::Piece for Pawn {
         }
 
         if target.get_type() != pieces::PieceType::Empty {
-            let mv = moves::PieceMove {
-                piece_type: pieces::PieceType::Pawn,
-                src_file: self.data.file,
-                src_rank: self.data.rank,
-                dst_file: file,
-                dst_rank: rank,
-            };
+            let mv = moves::PieceMove::new(
+                pieces::PieceType::Pawn,
+                self.data.file,
+                self.data.rank,
+                file,
+                rank
+            );
             return board.clone().piece_can_move(self.data.player, mv);
         }
 
