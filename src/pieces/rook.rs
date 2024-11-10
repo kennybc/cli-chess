@@ -47,8 +47,6 @@ impl pieces::Piece for Rook {
                 } else if curr_rank < rank {
                     curr_rank += 1;
                 }
-                let tmp = 8 * (7 - curr_rank) + curr_file;
-                println!("{tmp}");
                 if
                     board.squares[board::convert_position_1d(curr_file, curr_rank)].get_type() !=
                     pieces::PieceType::Empty

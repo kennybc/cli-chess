@@ -242,7 +242,7 @@ impl Board {
             }
             if !can_stop_checkmate {
                 self.set_state(GameState::Won(player));
-                return Ok(moves::MoveOutcome::Checkmate);
+                return Ok(moves::MoveOutcome::Win);
             }
         }
 
@@ -258,6 +258,22 @@ impl Board {
         player: Option<game::Player>,
         notation: &str
     ) -> Result<moves::MoveOutcome, moves::MoveError> {
+        match notation {
+            "1-0" => {
+                self.set_state(game::GameState::Won(game::Player::White));
+                return Ok(moves::MoveOutcome::Win);
+            }
+            "0-1" => {
+                self.set_state(game::GameState::Won(game::Player::Black));
+                return Ok(moves::MoveOutcome::Win);
+            }
+            "1/2-1/2" => {
+                self.set_state(game::GameState::Draw);
+                return Ok(moves::MoveOutcome::Draw);
+            }
+            _ => {}
+        }
+
         // check if game still in playing state; extract current player
         let player = player.unwrap_or(match self.state {
             game::GameState::Playing(p) => p,
@@ -269,69 +285,17 @@ impl Board {
             }
         });
 
-        // handle "special" castling notation first
-        if notation == "O-O" || notation == "O-O-O" {
-            let castle_rank = match player {
-                game::Player::White => 0,
-                game::Player::Black => 7,
-            };
-            if notation == "O-O" {
-                // king side castle
-                let can_castle = self.can_king_castle(castle_rank);
-                match can_castle {
-                    Ok(_) => {
-                        self.place_piece(player, pieces::PieceType::King, 6, castle_rank);
-                        self.place_piece(player, pieces::PieceType::Rook, 5, castle_rank);
-                        self.clear_square(4, castle_rank);
-                        self.clear_square(7, castle_rank);
-                        self.turn += 1;
-                        match player {
-                            game::Player::White => {
-                                self.white_king = (6, 0);
-                            }
-                            game::Player::Black => {
-                                self.black_king = (6, 7);
-                            }
-                        }
-                        self.set_state(GameState::Playing(other_player(player)));
-                        return Ok(moves::MoveOutcome::Continue);
+        match notation {
+            "O-O" => self.king_castle(player),
+            "O-O-O" => self.queen_castle(player),
+            _ => {
+                let piece_move = notation::parse_notation(self, &player, &notation);
+                match piece_move {
+                    Ok(mv) => {
+                        return self.execute_move(Some(player), mv);
                     }
-                    Err(e) => {
-                        return Err(e);
-                    }
+                    Err(e) => Err(e),
                 }
-            } else {
-                // queen side castle
-                match self.can_queen_castle(castle_rank) {
-                    Ok(_) => {
-                        self.place_piece(player, pieces::PieceType::King, 2, castle_rank);
-                        self.place_piece(player, pieces::PieceType::Rook, 3, castle_rank);
-                        self.clear_square(4, castle_rank);
-                        self.clear_square(0, castle_rank);
-                        self.turn += 1;
-                        match player {
-                            game::Player::White => {
-                                self.white_king = (2, 0);
-                            }
-                            game::Player::Black => {
-                                self.black_king = (2, 7);
-                            }
-                        }
-                        self.set_state(GameState::Playing(other_player(player)));
-                        return Ok(moves::MoveOutcome::Continue);
-                    }
-                    Err(e) => {
-                        return Err(e);
-                    }
-                }
-            }
-        } else {
-            let piece_move = notation::parse_notation(self, &player, &notation);
-            match piece_move {
-                Ok(mv) => {
-                    return self.execute_move(Some(player), mv);
-                }
-                Err(e) => Err(e),
             }
         }
     }
@@ -417,13 +381,69 @@ impl Board {
     }
 
     // can a player castle king side?
-    fn can_king_castle(&mut self, castle_rank: i8) -> Result<(), moves::MoveError> {
-        return self.can_castle(castle_rank, 7);
+    fn king_castle(
+        &mut self,
+        player: game::Player
+    ) -> Result<moves::MoveOutcome, moves::MoveError> {
+        let castle_rank = match player {
+            game::Player::White => 0,
+            game::Player::Black => 7,
+        };
+        match self.can_castle(castle_rank, 7) {
+            Ok(_) => {
+                self.place_piece(player, pieces::PieceType::King, 6, castle_rank);
+                self.place_piece(player, pieces::PieceType::Rook, 5, castle_rank);
+                self.clear_square(4, castle_rank);
+                self.clear_square(7, castle_rank);
+                self.turn += 1;
+                match player {
+                    game::Player::White => {
+                        self.white_king = (6, 0);
+                    }
+                    game::Player::Black => {
+                        self.black_king = (6, 7);
+                    }
+                }
+                self.set_state(GameState::Playing(other_player(player)));
+                return Ok(moves::MoveOutcome::Continue);
+            }
+            Err(e) => {
+                return Err(e);
+            }
+        }
     }
 
     // can a player castle queen side?
-    fn can_queen_castle(&mut self, castle_rank: i8) -> Result<(), moves::MoveError> {
-        return self.can_castle(castle_rank, 0);
+    fn queen_castle(
+        &mut self,
+        player: game::Player
+    ) -> Result<moves::MoveOutcome, moves::MoveError> {
+        let castle_rank = match player {
+            game::Player::White => 0,
+            game::Player::Black => 7,
+        };
+        match self.can_castle(castle_rank, 0) {
+            Ok(_) => {
+                self.place_piece(player, pieces::PieceType::King, 2, castle_rank);
+                self.place_piece(player, pieces::PieceType::Rook, 3, castle_rank);
+                self.clear_square(4, castle_rank);
+                self.clear_square(0, castle_rank);
+                self.turn += 1;
+                match player {
+                    game::Player::White => {
+                        self.white_king = (2, 0);
+                    }
+                    game::Player::Black => {
+                        self.black_king = (2, 7);
+                    }
+                }
+                self.set_state(GameState::Playing(other_player(player)));
+                return Ok(moves::MoveOutcome::Continue);
+            }
+            Err(e) => {
+                return Err(e);
+            }
+        }
     }
 
     pub fn is_path_under_attack(
@@ -502,13 +522,19 @@ impl Board {
             (-1, 1),
         ];
         for king_move in king_moves {
+            let dst_file = king.0 + king_move.0;
+            let dst_rank = king.1 + king_move.1;
             if
+                dst_file >= 0 &&
+                dst_file < 8 &&
+                dst_rank >= 0 &&
+                dst_rank < 8 &&
                 self.piece_can_move(other_player(attacker), PieceMove {
                     piece_type: pieces::PieceType::King,
                     src_file: king.0,
                     src_rank: king.1,
-                    dst_file: king.0 + king_move.0,
-                    dst_rank: king.1 + king_move.1,
+                    dst_file,
+                    dst_rank,
                 })
             {
                 return true;

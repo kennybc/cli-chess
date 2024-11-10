@@ -4,7 +4,7 @@ use crate::pieces;
 pub enum MoveOutcome {
     Continue,
     Draw,
-    Checkmate,
+    Win,
 }
 
 #[derive(Debug)]

@@ -54,9 +54,6 @@ impl pieces::Piece for Queen {
                     return false;
                 }
             }
-            let x = self.data.file;
-            let y = self.data.rank;
-            print!("queen at {x}:{y} can attack {file}:{rank}");
             return true;
         }
         return false;
