@@ -1,6 +1,7 @@
 use colored::Colorize;
 
 use crate::game::other_player;
+use crate::game::GameState;
 use crate::moves::PieceMove;
 use crate::notation;
 use crate::pieces;
@@ -124,7 +125,7 @@ impl Board {
     pub fn piece_can_move(&self, player: game::Player, mv: moves::PieceMove) -> bool {
         let piece = &self.squares[convert_position_1d(mv.src_file, mv.src_rank)];
         if piece.can_attack(self, mv.dst_file, mv.dst_rank) {
-            return match self.clone().execute_move(player, mv) {
+            return match self.clone().execute_move(Some(player), mv) {
                 Ok(_) => true,
                 Err(_) => false,
             };
@@ -134,9 +135,20 @@ impl Board {
 
     fn execute_move(
         &mut self,
-        player: game::Player,
+        player: Option<game::Player>,
         mut mv: moves::PieceMove
     ) -> Result<moves::MoveOutcome, moves::MoveError> {
+        // check if game still in playing state; extract current player
+        let player = player.unwrap_or(match self.state {
+            game::GameState::Playing(p) => p,
+            game::GameState::Draw => {
+                return Err(moves::MoveError::InvalidMove);
+            }
+            game::GameState::Won(p) => {
+                return Err(moves::MoveError::InvalidMove);
+            }
+        });
+
         let mut removed_pieces: Vec<(i8, i8, Box<dyn pieces::Piece>)> = Vec::new();
 
         let src_index = convert_position_1d(mv.src_file, mv.src_rank);
@@ -241,9 +253,20 @@ impl Board {
 
     pub fn execute_notation(
         &mut self,
-        player: game::Player,
+        player: Option<game::Player>,
         notation: &str
     ) -> Result<moves::MoveOutcome, moves::MoveError> {
+        // check if game still in playing state; extract current player
+        let player = player.unwrap_or(match self.state {
+            game::GameState::Playing(p) => p,
+            game::GameState::Draw => {
+                return Err(moves::MoveError::InvalidMove);
+            }
+            game::GameState::Won(p) => {
+                return Err(moves::MoveError::InvalidMove);
+            }
+        });
+
         let notation = notation.to_ascii_lowercase();
 
         // handle "special" castling notation first
@@ -304,7 +327,7 @@ impl Board {
             let piece_move = notation::parse_notation(self, &player, &notation);
             match piece_move {
                 Ok(mv) => {
-                    return self.execute_move(player, mv);
+                    return self.execute_move(Some(player), mv);
                 }
                 Err(e) => Err(e),
             }
