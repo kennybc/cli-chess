@@ -1,5 +1,7 @@
 use colored::Colorize;
 
+use crate::game::other_player;
+use crate::moves::PieceMove;
 use crate::notation;
 use crate::pieces;
 use crate::game;
@@ -130,7 +132,7 @@ impl Board {
         return false;
     }
 
-    pub fn execute_move(
+    fn execute_move(
         &mut self,
         player: game::Player,
         mut mv: moves::PieceMove
@@ -173,6 +175,7 @@ impl Board {
             self.clear_square(mv.dst_file, mv.src_rank);
             mv.dst_rank += direction_coef;
         }
+
         // temporary save the moved pieces
         removed_pieces.push((
             mv.dst_file,
@@ -211,17 +214,17 @@ impl Board {
         }
 
         if ally_checking_pieces.len() > 0 {
-            let mut can_stop_checkmate = false;
+            let mut can_stop_checkmate = true;
             for attacker in ally_checking_pieces {
                 if
-                    self.can_stop_check(
+                    !self.can_stop_check(
                         player,
                         self.squares[convert_position_1d(attacker.0, attacker.1)].get_type(),
                         attacker.0,
                         attacker.1
                     )
                 {
-                    can_stop_checkmate = true;
+                    can_stop_checkmate = false;
                     break;
                 }
             }
@@ -249,8 +252,8 @@ impl Board {
                 game::Player::White => 0,
                 game::Player::Black => 7,
             };
-            // king side castle
             if notation == "o-o" {
+                // king side castle
                 let can_castle = self.can_king_castle(castle_rank);
                 match can_castle {
                     Ok(_) => {
@@ -259,20 +262,14 @@ impl Board {
                         self.clear_square(4, castle_rank);
                         self.clear_square(7, castle_rank);
                         self.turn += 1;
-                        return Ok(moves::MoveOutcome::Continue);
-                    }
-                    Err(e) => {
-                        return Err(e);
-                    }
-                }
-            } else if notation == "o-o-o" {
-                match self.can_queen_castle(castle_rank) {
-                    Ok(_) => {
-                        self.place_piece(player, pieces::PieceType::King, 2, castle_rank);
-                        self.place_piece(player, pieces::PieceType::Rook, 3, castle_rank);
-                        self.clear_square(4, castle_rank);
-                        self.clear_square(0, castle_rank);
-                        self.turn += 1;
+                        match player {
+                            game::Player::White => {
+                                self.white_king = (6, 0);
+                            }
+                            game::Player::Black => {
+                                self.black_king = (6, 7);
+                            }
+                        }
                         return Ok(moves::MoveOutcome::Continue);
                     }
                     Err(e) => {
@@ -280,7 +277,28 @@ impl Board {
                     }
                 }
             } else {
-                return Err(moves::MoveError::InvalidMove);
+                // queen side castle
+                match self.can_queen_castle(castle_rank) {
+                    Ok(_) => {
+                        self.place_piece(player, pieces::PieceType::King, 2, castle_rank);
+                        self.place_piece(player, pieces::PieceType::Rook, 3, castle_rank);
+                        self.clear_square(4, castle_rank);
+                        self.clear_square(0, castle_rank);
+                        self.turn += 1;
+                        match player {
+                            game::Player::White => {
+                                self.white_king = (2, 0);
+                            }
+                            game::Player::Black => {
+                                self.black_king = (2, 7);
+                            }
+                        }
+                        return Ok(moves::MoveOutcome::Continue);
+                    }
+                    Err(e) => {
+                        return Err(e);
+                    }
+                }
             }
         } else {
             let piece_move = notation::parse_notation(self, &player, &notation);
@@ -446,6 +464,31 @@ impl Board {
             game::Player::White => self.black_king,
             game::Player::Black => self.white_king,
         };
+
+        // test if the king can move out of check
+        let king_moves = [
+            (1, 1),
+            (1, 0),
+            (0, 1),
+            (-1, 0),
+            (0, -1),
+            (-1, -1),
+            (1, -1),
+            (-1, 1),
+        ];
+        for king_move in king_moves {
+            if
+                self.piece_can_move(other_player(attacker), PieceMove {
+                    piece_type: pieces::PieceType::King,
+                    src_file: king.0,
+                    src_rank: king.1,
+                    dst_file: king.0 + king_move.0,
+                    dst_rank: king.1 + king_move.1,
+                })
+            {
+                return true;
+            }
+        }
 
         // knight can't be blocked, don't check for it
         if attacker_type == pieces::PieceType::Knight {
