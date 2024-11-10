@@ -144,7 +144,7 @@ impl Board {
             game::GameState::Draw => {
                 return Err(moves::MoveError::InvalidMove);
             }
-            game::GameState::Won(p) => {
+            game::GameState::Won(_) => {
                 return Err(moves::MoveError::InvalidMove);
             }
         });
@@ -241,6 +241,7 @@ impl Board {
                 }
             }
             if !can_stop_checkmate {
+                self.set_state(GameState::Won(player));
                 return Ok(moves::MoveOutcome::Checkmate);
             }
         }
@@ -248,6 +249,7 @@ impl Board {
         self.squares[dst_index].set_last_move(self.turn, mv);
         self.turn += 1;
 
+        self.set_state(GameState::Playing(other_player(player)));
         return Ok(moves::MoveOutcome::Continue);
     }
 
@@ -262,20 +264,18 @@ impl Board {
             game::GameState::Draw => {
                 return Err(moves::MoveError::InvalidMove);
             }
-            game::GameState::Won(p) => {
+            game::GameState::Won(_) => {
                 return Err(moves::MoveError::InvalidMove);
             }
         });
 
-        let notation = notation.to_ascii_lowercase();
-
         // handle "special" castling notation first
-        if notation == "o-o" || notation == "o-o-o" {
+        if notation == "O-O" || notation == "O-O-O" {
             let castle_rank = match player {
                 game::Player::White => 0,
                 game::Player::Black => 7,
             };
-            if notation == "o-o" {
+            if notation == "O-O" {
                 // king side castle
                 let can_castle = self.can_king_castle(castle_rank);
                 match can_castle {
@@ -293,6 +293,7 @@ impl Board {
                                 self.black_king = (6, 7);
                             }
                         }
+                        self.set_state(GameState::Playing(other_player(player)));
                         return Ok(moves::MoveOutcome::Continue);
                     }
                     Err(e) => {
@@ -316,6 +317,7 @@ impl Board {
                                 self.black_king = (2, 7);
                             }
                         }
+                        self.set_state(GameState::Playing(other_player(player)));
                         return Ok(moves::MoveOutcome::Continue);
                     }
                     Err(e) => {

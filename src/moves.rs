@@ -1,5 +1,6 @@
 use crate::pieces;
 
+#[derive(Debug)]
 pub enum MoveOutcome {
     Continue,
     Draw,

@@ -40,7 +40,9 @@ mod game_tests {
             let game = import_game_from_file(path.unwrap().path().to_str().unwrap());
             for mv in game.0 {
                 println!("checking: {mv}");
-                assert_eq!(board.execute_notation(None, &mv).is_ok(), true);
+                let res = board.execute_notation(None, &mv);
+                println!("{res:?}");
+                assert_eq!(res.is_ok(), true);
             }
         }
     }

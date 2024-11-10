@@ -24,15 +24,15 @@ pub enum PieceType {
 }
 
 // allow inference from char (for notation parsing)
-impl From<char> for PieceType {
-    fn from(c: char) -> PieceType {
+impl PieceType {
+    pub fn from_char(c: char) -> Result<PieceType, moves::MoveError> {
         match c {
-            'k' => PieceType::King,
-            'q' => PieceType::Queen,
-            'r' => PieceType::Rook,
-            'b' => PieceType::Bishop,
-            'n' => PieceType::Knight,
-            _ => PieceType::Pawn,
+            'K' => Ok(PieceType::King),
+            'Q' => Ok(PieceType::Queen),
+            'R' => Ok(PieceType::Rook),
+            'B' => Ok(PieceType::Bishop),
+            'N' => Ok(PieceType::Knight),
+            _ => Ok(PieceType::Pawn),
         }
     }
 }
