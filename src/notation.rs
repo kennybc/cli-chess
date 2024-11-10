@@ -45,13 +45,16 @@ pub fn parse_notation(
     notation: &str
 ) -> Result<moves::PieceMove, moves::MoveError> {
     let re = Regex::new(
-        r"(?:(?P<piece_type>[KQRBN])?(?P<src_file>[a-h])?(?P<src_rank>[1-8])?(?P<capture>x)?(?P<dst_file>[a-h])(?P<dst_rank>[1-8])(?:=(?P<promotion>[qrbn]))?(?P<check>[+#])?)$"
+        r"(?:(?P<piece_type>[kqrnKQRBN])?(?P<src_file>[a-h])?(?P<src_rank>[1-8])?(?P<capture>x)?(?P<dst_file>[a-h])(?P<dst_rank>[1-8])(?:=(?P<promotion>[qrbn]))?(?P<check>[+#])?)$"
     ).unwrap();
 
     // capture pattern matches and extract captured groups
     if let Some(caps) = re.captures(notation) {
         let piece_type = pieces::PieceType
-            ::from_char(caps.name("piece_type").map_or('p', |m| m.as_str().chars().next().unwrap()))
+            ::from_char(match caps.name("piece_type") {
+                Some(c) => c.as_str().to_ascii_uppercase().chars().next().unwrap(),
+                None => 'p',
+            })
             .unwrap();
         let src_file = caps
             .name("src_file")
