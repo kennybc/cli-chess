@@ -138,7 +138,7 @@ impl Board {
     fn execute_move(
         &mut self,
         player: Option<game::Player>,
-        mut mv: moves::PieceMove
+        mv: moves::PieceMove
     ) -> Result<moves::MoveOutcome, moves::MoveError> {
         // check if game still in playing state; extract current player
         let player = player.unwrap_or(match self.state {
@@ -172,14 +172,10 @@ impl Board {
         // check if it is en passant
         if
             self.squares[src_index].get_type() == pieces::PieceType::Pawn &&
-            mv.src_rank == mv.dst_rank
+            mv.dst_file != mv.src_file &&
+            self.squares[dst_index].get_type() == pieces::PieceType::Empty
         {
-            let direction_coef = match player {
-                game::Player::White => 1,
-                game::Player::Black => -1,
-            };
-
-            // temporarily save the removed pawn
+            // temporarily save the captured pawn
             removed_pieces.push((
                 mv.dst_file,
                 mv.src_rank,
@@ -187,7 +183,6 @@ impl Board {
             ));
 
             self.clear_square(mv.dst_file, mv.src_rank);
-            mv.dst_rank += direction_coef;
         }
 
         // temporary save the moved pieces

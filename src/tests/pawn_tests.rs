@@ -82,7 +82,7 @@ mod pawn_tests {
 
         assert_eq!(pawn.get_type(), pieces::PieceType::Pawn);
         assert_eq!(pawn.can_move(&board, 3, 5), true);
-        assert_eq!(pawn.can_move(&board, 3, 4), true);
+        assert_eq!(pawn.can_move(&board, 3, 4), false);
 
         board.execute_notation(Some(game::Player::Black), "a6").unwrap();
     }

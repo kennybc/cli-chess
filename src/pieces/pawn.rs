@@ -32,7 +32,7 @@ impl pieces::Piece for Pawn {
         return pieces::PieceType::Pawn;
     }
 
-    fn can_attack(&self, board: &board::Board, file: i8, mut rank: i8) -> bool {
+    fn can_attack(&self, _: &board::Board, file: i8, rank: i8) -> bool {
         if file == self.data.file - 1 || file == self.data.file + 1 {
             // the rank that the pawn can reach and attack
             let reach = self.data.rank + self.get_direction_coeff();
@@ -40,29 +40,7 @@ impl pieces::Piece for Pawn {
                 if reach < 0 || reach > 7 {
                     return false;
                 }
-                if rank == self.data.rank {
-                    rank = reach;
-
-                    if
-                        board.squares[board::convert_position_1d(file, rank)].get_type() ==
-                        pieces::PieceType::Empty
-                    {
-                        // en passant
-                        let en_passant_square =
-                            &board.squares[board::convert_position_1d(file, self.data.rank)];
-                        if en_passant_square.get_type() == pieces::PieceType::Pawn {
-                            return match en_passant_square.get_last_move() {
-                                None => false,
-                                Some(tuple) =>
-                                    tuple.0 == board.get_turn() - 1 &&
-                                        (tuple.1.src_rank - tuple.1.dst_rank).abs() == 2,
-                            };
-                        }
-                    }
-                } else {
-                    // true for any non-empty square: pawn can attack enemy or defend ally
-                    return rank == reach;
-                }
+                return rank == reach;
             }
         }
         return false;
@@ -89,17 +67,30 @@ impl pieces::Piece for Pawn {
                 None => diff == 1 || diff == 2,
                 Some(_) => diff == 1,
             };
-        }
-
-        if target.get_type() != pieces::PieceType::Empty {
-            let mv = moves::PieceMove::new(
-                pieces::PieceType::Pawn,
-                self.data.file,
-                self.data.rank,
-                file,
-                rank
-            );
-            return board.clone().piece_can_move(self.data.player, mv);
+        } else if self.can_attack(board, file, rank) {
+            // pawn move not within same file (capture move)
+            if target.get_type() != pieces::PieceType::Empty {
+                let mv = moves::PieceMove::new(
+                    pieces::PieceType::Pawn,
+                    self.data.file,
+                    self.data.rank,
+                    file,
+                    rank
+                );
+                return board.clone().piece_can_move(self.data.player, mv);
+            } else {
+                // en passant
+                let en_passant_square =
+                    &board.squares[board::convert_position_1d(file, self.data.rank)];
+                if en_passant_square.get_type() == pieces::PieceType::Pawn {
+                    return match en_passant_square.get_last_move() {
+                        None => false,
+                        Some(tuple) =>
+                            tuple.0 == board.get_turn() - 1 &&
+                                (tuple.1.src_rank - tuple.1.dst_rank).abs() == 2,
+                    };
+                }
+            }
         }
 
         return false;

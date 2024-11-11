@@ -46,7 +46,7 @@ mod game_tests {
     }
 
     #[test]
-    fn test_all_games() {
+    fn simulate_all_games() {
         let paths = std::fs::read_dir("./games").unwrap();
         for path in paths {
             let mut board: board::Board = board::Board::new();
