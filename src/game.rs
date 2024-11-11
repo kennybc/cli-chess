@@ -1,5 +1,5 @@
 use std::io;
-use crate::{ board, moves };
+use crate::board;
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum Player {
@@ -7,7 +7,7 @@ pub enum Player {
     Black,
 }
 
-#[derive(Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub enum GameState {
     Playing(Player),
     Won(Player),
@@ -36,27 +36,12 @@ pub fn game_loop() {
             if notation == "" {
                 print!("{esc}[2J{esc}[1;1H", esc = 27 as char);
                 println!("{board}");
-            } else if notation == "draw" {
-                board.set_state(GameState::Draw);
-            } else if notation == "resign" {
-                board.set_state(GameState::Won(other_player(p)));
             } else {
-                let result = board.execute_notation(p, &notation);
+                let result = board.execute_notation(Some(p), &notation);
                 match result {
-                    Ok(outcome) => {
+                    Ok(_) => {
                         print!("{esc}[2J{esc}[1;1H", esc = 27 as char);
                         println!("{board}");
-                        match outcome {
-                            moves::MoveOutcome::Continue => {
-                                board.set_state(GameState::Playing(other_player(p)));
-                            }
-                            moves::MoveOutcome::Checkmate => {
-                                board.set_state(GameState::Won(p));
-                            }
-                            moves::MoveOutcome::Draw => {
-                                board.set_state(GameState::Draw);
-                            }
-                        }
                     }
                     Err(e) => {
                         println!("Error: {e}");

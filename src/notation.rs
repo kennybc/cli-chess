@@ -45,13 +45,17 @@ pub fn parse_notation(
     notation: &str
 ) -> Result<moves::PieceMove, moves::MoveError> {
     let re = Regex::new(
-        r"(?:(?P<piece_type>[kqrbn])?(?P<src_file>[a-h])?(?P<src_rank>[1-8])?(?P<capture>x)?(?P<dst_file>[a-h])(?P<dst_rank>[1-8])(?:=(?P<promotion>[qrbn]))?(?P<check>[+#])?)$"
+        r"(?:(?P<piece_type>[kqrnKQRBN])?(?P<src_file>[a-h])?(?P<src_rank>[1-8])?(?P<capture>x)?(?P<dst_file>[a-h])(?P<dst_rank>[1-8])(?:=(?P<promotion>[qrbnQRBN]))?(?P<check>[+#])?)$"
     ).unwrap();
 
+    // capture pattern matches and extract captured groups
     if let Some(caps) = re.captures(notation) {
-        let piece_type = pieces::PieceType::from(
-            caps.name("piece_type").map_or('p', |m| m.as_str().chars().next().unwrap())
-        );
+        let mut piece_type = pieces::PieceType
+            ::from_char(match caps.name("piece_type") {
+                Some(c) => c.as_str().to_ascii_uppercase().chars().next().unwrap(),
+                None => 'p',
+            })
+            .unwrap();
         let src_file = caps
             .name("src_file")
             .map_or(None, |m| Some(convert_file(m.as_str().chars().next().unwrap())));
@@ -63,7 +67,15 @@ pub fn parse_notation(
         );
         let dst_rank = caps.name("dst_rank").unwrap().as_str().parse::<i8>().unwrap() - 1;
         let capture = caps.name("capture").map_or(false, |_| true);
-        let promotion = caps.name("promotion").map_or("", |m| m.as_str());
+        let promotion = match caps.name("promotion") {
+            Some(p) =>
+                Some(
+                    pieces::PieceType
+                        ::from_char(p.as_str().to_ascii_uppercase().chars().next().unwrap())
+                        .unwrap()
+                ),
+            None => None,
+        };
         let check = caps.name("check").map_or("", |m| m.as_str());
 
         // get all potential pieces that could make this move
@@ -93,17 +105,20 @@ pub fn parse_notation(
         if check == "todo" {
             return Err(moves::MoveError::InvalidCheck);
         }
-        if promotion == "todo" {
-            return Err(moves::MoveError::InvalidPromotion);
+        if let Some(p) = promotion {
+            let promotion_rank = match player {
+                game::Player::White => 7,
+                game::Player::Black => 0,
+            };
+            if piece_type != pieces::PieceType::Pawn || dst_rank != promotion_rank {
+                return Err(moves::MoveError::InvalidPromotion);
+            }
+            piece_type = p;
         }
 
-        return Ok(moves::PieceMove {
-            piece_type,
-            src_file: candidates[0].0,
-            src_rank: candidates[0].1,
-            dst_file,
-            dst_rank,
-        });
+        return Ok(
+            moves::PieceMove::new(piece_type, candidates[0].0, candidates[0].1, dst_file, dst_rank)
+        );
     } else {
         return Err(moves::MoveError::InvalidNotation);
     }

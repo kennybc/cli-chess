@@ -1,9 +1,10 @@
 use crate::pieces;
 
+#[derive(Debug)]
 pub enum MoveOutcome {
     Continue,
     Draw,
-    Checkmate,
+    Win,
 }
 
 #[derive(Debug)]
@@ -48,4 +49,24 @@ pub struct PieceMove {
     pub src_rank: i8,
     pub dst_file: i8,
     pub dst_rank: i8,
+    pub promotion_piece_type: Option<pieces::PieceType>,
+}
+
+impl PieceMove {
+    pub fn new(
+        piece_type: pieces::PieceType,
+        src_file: i8,
+        src_rank: i8,
+        dst_file: i8,
+        dst_rank: i8
+    ) -> Self {
+        Self {
+            piece_type,
+            src_file,
+            src_rank,
+            dst_file,
+            dst_rank,
+            promotion_piece_type: None,
+        }
+    }
 }

@@ -74,16 +74,16 @@ mod pawn_tests {
     fn pawn_capture_en_passant() {
         let mut board: board::Board = board::Board::new();
         board.reset_board();
-        board.execute_notation(game::Player::White, "e4").unwrap();
-        board.execute_notation(game::Player::White, "e5").unwrap();
-        board.execute_notation(game::Player::Black, "d5").unwrap();
+        board.execute_notation(Some(game::Player::White), "e4").unwrap();
+        board.execute_notation(Some(game::Player::White), "e5").unwrap();
+        board.execute_notation(Some(game::Player::Black), "d5").unwrap();
 
         let pawn = &board.squares[board::convert_position_1d(4, 4)];
 
         assert_eq!(pawn.get_type(), pieces::PieceType::Pawn);
         assert_eq!(pawn.can_move(&board, 3, 5), true);
-        assert_eq!(pawn.can_move(&board, 3, 4), true);
+        assert_eq!(pawn.can_move(&board, 3, 4), false);
 
-        board.execute_notation(game::Player::Black, "a6").unwrap();
+        board.execute_notation(Some(game::Player::Black), "a6").unwrap();
     }
 }

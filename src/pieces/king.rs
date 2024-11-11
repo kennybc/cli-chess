@@ -37,13 +37,13 @@ impl pieces::Piece for King {
                 return false;
             }
         }
-        let mv = moves::PieceMove {
-            piece_type: pieces::PieceType::King,
-            src_file: self.data.file,
-            src_rank: self.data.rank,
-            dst_file: file,
-            dst_rank: rank,
-        };
+        let mv = moves::PieceMove::new(
+            pieces::PieceType::King,
+            self.data.file,
+            self.data.rank,
+            file,
+            rank
+        );
         return board.clone().piece_can_move(self.data.player, mv);
     }
 

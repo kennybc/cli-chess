@@ -47,8 +47,6 @@ impl pieces::Piece for Rook {
                 } else if curr_rank < rank {
                     curr_rank += 1;
                 }
-                let tmp = 8 * (7 - curr_rank) + curr_file;
-                println!("{tmp}");
                 if
                     board.squares[board::convert_position_1d(curr_file, curr_rank)].get_type() !=
                     pieces::PieceType::Empty
@@ -67,13 +65,13 @@ impl pieces::Piece for Rook {
                 return false;
             }
         }
-        let mv = moves::PieceMove {
-            piece_type: pieces::PieceType::Rook,
-            src_file: self.data.file,
-            src_rank: self.data.rank,
-            dst_file: file,
-            dst_rank: rank,
-        };
+        let mv = moves::PieceMove::new(
+            pieces::PieceType::Rook,
+            self.data.file,
+            self.data.rank,
+            file,
+            rank
+        );
         return board.clone().piece_can_move(self.data.player, mv);
     }
 
