@@ -1,11 +1,10 @@
 use crate::board;
-use crate::game;
 use crate::pieces;
 use crate::moves;
 use regex::Regex;
 
-fn get_piece_candidates(
-    board: &board::Board,
+/*fn get_piece_candidates(
+    board: &board::Bitboard,
     player: &game::Player,
     piece_type: &pieces::PieceType,
     src_file: Option<i8>,
@@ -37,25 +36,19 @@ fn get_piece_candidates(
         }
     }
     return candidates;
-}
+}*/
 
-pub fn parse_notation(
-    board: &board::Board,
-    player: &game::Player,
-    notation: &str
-) -> Result<moves::PieceMove, moves::MoveError> {
+pub fn parse_notation(board: &board::Board, notation: &str) -> Result<moves::Move, moves::Error> {
     let re = Regex::new(
         r"(?:(?P<piece_type>[kqrnKQRBN])?(?P<src_file>[a-h])?(?P<src_rank>[1-8])?(?P<capture>x)?(?P<dst_file>[a-h])(?P<dst_rank>[1-8])(?:=(?P<promotion>[qrbnQRBN]))?(?P<check>[+#])?)$"
     ).unwrap();
 
     // capture pattern matches and extract captured groups
     if let Some(caps) = re.captures(notation) {
-        let mut piece_type = pieces::PieceType
-            ::from_char(match caps.name("piece_type") {
-                Some(c) => c.as_str().to_ascii_uppercase().chars().next().unwrap(),
-                None => 'p',
-            })
-            .unwrap();
+        let mut piece = pieces::Piece::from_char(match caps.name("piece_type") {
+            Some(c) => c.as_str().to_ascii_uppercase().chars().next().unwrap(),
+            None => 'p',
+        });
         let src_file = caps
             .name("src_file")
             .map_or(None, |m| Some(convert_file(m.as_str().chars().next().unwrap())));
@@ -70,57 +63,20 @@ pub fn parse_notation(
         let promotion = match caps.name("promotion") {
             Some(p) =>
                 Some(
-                    pieces::PieceType
-                        ::from_char(p.as_str().to_ascii_uppercase().chars().next().unwrap())
-                        .unwrap()
+                    pieces::Piece::from_char(
+                        p.as_str().to_ascii_uppercase().chars().next().unwrap()
+                    )
                 ),
             None => None,
         };
         let check = caps.name("check").map_or("", |m| m.as_str());
 
-        // get all potential pieces that could make this move
-        let candidates = get_piece_candidates(
-            &board,
-            &player,
-            &piece_type,
-            src_file,
-            src_rank,
-            dst_file,
-            dst_rank
-        );
-        if candidates.len() == 0 {
-            return Err(moves::MoveError::InvalidMove);
-        }
-        if candidates.len() > 1 {
-            for candidate in candidates {
-                println!("{}:{}", candidate.0, candidate.1);
-            }
-            return Err(moves::MoveError::AmbiguousMove);
-        }
-
-        let piece = &board.squares[board::convert_position_1d(candidates[0].0, candidates[0].1)];
-        if capture && !piece.can_attack(board, dst_file, dst_rank) {
-            return Err(moves::MoveError::InvalidCapture);
-        }
-        if check == "todo" {
-            return Err(moves::MoveError::InvalidCheck);
-        }
-        if let Some(p) = promotion {
-            let promotion_rank = match player {
-                game::Player::White => 7,
-                game::Player::Black => 0,
-            };
-            if piece_type != pieces::PieceType::Pawn || dst_rank != promotion_rank {
-                return Err(moves::MoveError::InvalidPromotion);
-            }
-            piece_type = p;
-        }
-
-        return Ok(
-            moves::PieceMove::new(piece_type, candidates[0].0, candidates[0].1, dst_file, dst_rank)
-        );
+        /*return Ok(
+            moves::PieceMove::new(piece, candidates[0].0, candidates[0].1, dst_file, dst_rank)
+        );*/
+        return Err(moves::Error::InvalidNotation);
     } else {
-        return Err(moves::MoveError::InvalidNotation);
+        return Err(moves::Error::InvalidNotation);
     }
 }
 

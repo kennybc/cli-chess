@@ -1,63 +1,59 @@
+use crate::board::Board;
+use crate::notation::parse_notation;
+use crate::moves;
 use std::io;
-use crate::board;
 
-#[derive(Debug, Copy, Clone, PartialEq)]
-pub enum Player {
-    White,
-    Black,
+pub struct Game {
+    board: Board,
+    white_to_move: bool,
 }
 
-#[derive(Debug, Copy, Clone, PartialEq)]
-pub enum GameState {
-    Playing(Player),
-    Won(Player),
-    Draw,
-}
-
-pub fn other_player(p: Player) -> Player {
-    match p {
-        Player::White => Player::Black,
-        Player::Black => Player::White,
+impl Game {
+    pub fn new() -> Self {
+        Self {
+            board: Board::new(),
+            white_to_move: true,
+        }
     }
-}
 
-pub fn game_loop() {
-    let mut board = board::Board::new();
-    board.reset_board();
-    println!("{board}");
+    pub fn run(&mut self) {
+        println!("{}", self.board);
 
-    loop {
-        if let &GameState::Playing(p) = board.get_state() {
-            println!("({p:?}) Enter your move:");
+        loop {
+            println!("{} to move:", if self.white_to_move { "White" } else { "Black" });
+
             let mut notation = String::new();
-            io::stdin().read_line(&mut notation).expect("failed to read line");
+            io::stdin().read_line(&mut notation).expect("Failed to read input");
             let notation = notation.trim();
 
-            if notation == "" {
+            if notation == "quit" {
+                break;
+            } else if notation == "" {
                 print!("{esc}[2J{esc}[1;1H", esc = 27 as char);
-                println!("{board}");
+                println!("{}", self.board);
             } else {
-                let result = board.execute_notation(Some(p), &notation);
+                let result = self.process_move(notation);
                 match result {
                     Ok(_) => {
                         print!("{esc}[2J{esc}[1;1H", esc = 27 as char);
-                        println!("{board}");
+                        println!("{}", self.board);
                     }
                     Err(e) => {
                         println!("Error: {e}");
                     }
                 }
             }
-        } else {
-            break;
         }
     }
 
-    if let GameState::Won(p) = board.get_state() {
-        println!("{p:?} won!");
-    }
+    fn process_move(&mut self, notation: &str) -> Result<moves::Outcome, moves::Error> {
+        // Step 1: Parse the notation into a move
+        let parsed_move = parse_notation(&self.board, notation)?;
 
-    if let GameState::Draw = board.get_state() {
-        println!("Game ended in a draw!");
+        // Step 2: Execute the move
+        let outcome = self.board.execute_move(parsed_move)?;
+
+        // Step 3: Return the outcome of the move
+        Ok(outcome)
     }
 }

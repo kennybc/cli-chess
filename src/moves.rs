@@ -1,14 +1,14 @@
 use crate::pieces;
 
 #[derive(Debug)]
-pub enum MoveOutcome {
+pub enum Outcome {
     Continue,
     Draw,
     Win,
 }
 
 #[derive(Debug)]
-pub enum MoveError {
+pub enum Error {
     InvalidNotation,
     InvalidMove,
     MoveIntoCheck,
@@ -18,22 +18,21 @@ pub enum MoveError {
     InvalidPromotion,
 }
 
-impl std::fmt::Display for MoveError {
+impl std::fmt::Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
-            MoveError::InvalidNotation => write!(f, "Invalid notation syntax!"),
-            MoveError::InvalidMove => write!(f, "Invalid move!"),
-            MoveError::MoveIntoCheck => write!(f, "That move puts your king in danger!"),
-            MoveError::AmbiguousMove =>
+            Error::InvalidNotation => write!(f, "Invalid notation syntax!"),
+            Error::InvalidMove => write!(f, "Invalid move!"),
+            Error::MoveIntoCheck => write!(f, "That move puts your king in danger!"),
+            Error::AmbiguousMove =>
                 write!(
                     f,
                     "Multiple pieces can make that move! Please disambiguate by providing a file, rank, or both."
                 ),
-            MoveError::InvalidCapture =>
-                write!(f, "That move is not a capture! Please omit the 'x'."),
-            MoveError::InvalidCheck =>
+            Error::InvalidCapture => write!(f, "That move is not a capture! Please omit the 'x'."),
+            Error::InvalidCheck =>
                 write!(f, "That move is not a check! Please omit the '+' or '#'."),
-            MoveError::InvalidPromotion =>
+            Error::InvalidPromotion =>
                 write!(
                     f,
                     "Invalid promotion! Make sure the pawn is moving into the last rank and you specify a piece to promote into."
@@ -43,18 +42,18 @@ impl std::fmt::Display for MoveError {
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]
-pub struct PieceMove {
-    pub piece_type: pieces::PieceType,
+pub struct Move {
+    pub piece_type: pieces::Piece,
     pub src_file: i8,
     pub src_rank: i8,
     pub dst_file: i8,
     pub dst_rank: i8,
-    pub promotion_piece_type: Option<pieces::PieceType>,
+    pub promotion_piece_type: Option<pieces::Piece>,
 }
 
-impl PieceMove {
+impl Move {
     pub fn new(
-        piece_type: pieces::PieceType,
+        piece_type: pieces::Piece,
         src_file: i8,
         src_rank: i8,
         dst_file: i8,

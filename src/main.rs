@@ -8,5 +8,6 @@ mod moves;
 mod tests;
 
 fn main() {
-    game::game_loop();
+    let mut game = game::Game::new();
+    game.run();
 }
