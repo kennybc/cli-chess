@@ -3,11 +3,11 @@ use crate::pieces;
 use crate::moves;
 use regex::Regex;
 
-/*fn get_piece_candidates(
-    board: &board::Bitboard,
-    player: &game::Player,
-    piece_type: &pieces::PieceType,
-    src_file: Option<i8>,
+fn get_piece_candidates(
+    board: &board::Board,
+    player: &pieces::Player,
+    piece: &pieces::Piece,
+    src_file: Option<i8>, // optional file/rank to discriminate attacker
     src_rank: Option<i8>,
     dst_file: i8,
     dst_rank: i8
@@ -36,7 +36,7 @@ use regex::Regex;
         }
     }
     return candidates;
-}*/
+}
 
 pub fn parse_notation(board: &board::Board, notation: &str) -> Result<moves::Move, moves::Error> {
     let re = Regex::new(

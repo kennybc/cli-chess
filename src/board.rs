@@ -14,22 +14,22 @@ impl Board {
         Self {
             bitboards: [
                 [
-                    // White Pieces
-                    0x000000000000ff00, // Pawns
-                    0x0000000000000042, // Knights
-                    0x0000000000000024, // Bishops
-                    0x0000000000000081, // Rooks
-                    0x0000000000000008, // Queen
-                    0x0000000000000010, // King
+                    // white pieces
+                    0x000000000000ff00, // pawns
+                    0x0000000000000042, // knights
+                    0x0000000000000024, // bishops
+                    0x0000000000000081, // rooks
+                    0x0000000000000008, // queen
+                    0x0000000000000010, // king
                 ],
                 [
-                    // Black Pieces
-                    0x00ff000000000000, // Pawns
-                    0x4200000000000000, // Knights
-                    0x2400000000000000, // Bishops
-                    0x8100000000000000, // Rooks
-                    0x0800000000000000, // Queen
-                    0x1000000000000000, // King
+                    // black pieces
+                    0x00ff000000000000, // pawns
+                    0x4200000000000000, // knights
+                    0x2400000000000000, // bishops
+                    0x8100000000000000, // rooks
+                    0x0800000000000000, // queen
+                    0x1000000000000000, // king
                 ],
             ],
         }
@@ -90,14 +90,14 @@ impl std::fmt::Display for Board {
 
                 let mut piece_string = piece_char.to_string() + " ";
 
-                // Color board squares
+                // color board squares
                 if (rank + file) % 2 == 0 {
                     piece_string = piece_string.on_truecolor(240, 240, 240).to_string();
                 } else {
                     piece_string = piece_string.on_truecolor(202, 202, 202).to_string();
                 }
 
-                // Color pieces
+                // color pieces
                 /*if piece_char.is_uppercase() {
                     piece_string = piece_string.red().to_string();
                 } else if piece_char.is_lowercase() {

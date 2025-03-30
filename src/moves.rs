@@ -43,7 +43,8 @@ impl std::fmt::Display for Error {
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct Move {
-    pub piece_type: pieces::Piece,
+    pub piece: pieces::Piece,
+    pub player: pieces::Player,
     pub src_file: i8,
     pub src_rank: i8,
     pub dst_file: i8,
@@ -53,14 +54,16 @@ pub struct Move {
 
 impl Move {
     pub fn new(
-        piece_type: pieces::Piece,
+        piece: pieces::Piece,
+        player: pieces::Player,
         src_file: i8,
         src_rank: i8,
         dst_file: i8,
         dst_rank: i8
     ) -> Self {
         Self {
-            piece_type,
+            piece,
+            player,
             src_file,
             src_rank,
             dst_file,
