@@ -20,7 +20,7 @@ fn get_piece_candidates(
             }
         }
         for r in 0..8 {
-            let candidate_square = &board.squares[board::convert_position_1d(f, r)];
+            /*let candidate_square = &board.squares[board::convert_position_1d(f, r)];
             if let Some(p) = candidate_square.get_player() {
                 if let Some(sr) = src_rank {
                     if r != sr {
@@ -32,7 +32,7 @@ fn get_piece_candidates(
                         candidates.push((f, r));
                     }
                 }
-            }
+            }*/
         }
     }
     return candidates;

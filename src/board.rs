@@ -1,5 +1,3 @@
-use std::fmt::Result;
-
 use colored::Colorize;
 
 use crate::moves;
@@ -111,9 +109,4 @@ impl std::fmt::Display for Board {
 
         write!(f, "{board_string}")
     }
-}
-
-// convert a file and rank to a square index on a 1d board array
-pub fn convert_position_1d(file: i8, rank: i8) -> usize {
-    return (8 * (7 - rank) + file) as usize;
 }

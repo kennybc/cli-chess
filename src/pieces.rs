@@ -1,3 +1,6 @@
+mod shifts;
+mod pawn;
+
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum Player {
     White = 0,
