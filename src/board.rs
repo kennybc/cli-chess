@@ -56,31 +56,39 @@ impl std::fmt::Display for Board {
         for rank in (0..8).rev() {
             for file in 0..8 {
                 let square = rank * 8 + file;
-                let mut piece_char = ' ';
+                let mut piece_char = String::from(" ");
 
                 for (player_idx, player_bitboards) in self.bitboards.iter().enumerate() {
                     for (piece_idx, &bitboard) in player_bitboards.iter().enumerate() {
                         if (bitboard & (1 << square)) != 0 {
                             if player_idx == 0 {
-                                piece_char = match piece_idx {
-                                    0 => '♙',
-                                    1 => '♘',
-                                    2 => '♗',
-                                    3 => '♖',
-                                    4 => '♕',
-                                    5 => '♔',
-                                    _ => piece_char,
-                                };
+                                piece_char = (
+                                    match piece_idx {
+                                        0 => "♙",
+                                        1 => "♘",
+                                        2 => "♗",
+                                        3 => "♖",
+                                        4 => "♕",
+                                        5 => "♔",
+                                        _ => &piece_char,
+                                    }
+                                )
+                                    .red()
+                                    .to_string();
                             } else {
-                                piece_char = match piece_idx {
-                                    0 => '♟',
-                                    1 => '♞',
-                                    2 => '♝',
-                                    3 => '♜',
-                                    4 => '♛',
-                                    5 => '♚',
-                                    _ => piece_char,
-                                };
+                                piece_char = (
+                                    match piece_idx {
+                                        0 => "♟",
+                                        1 => "♞",
+                                        2 => "♝",
+                                        3 => "♜",
+                                        4 => "♛",
+                                        5 => "♚",
+                                        _ => &piece_char,
+                                    }
+                                )
+                                    .blue()
+                                    .to_string();
                             }
                         }
                     }
@@ -94,13 +102,6 @@ impl std::fmt::Display for Board {
                 } else {
                     piece_string = piece_string.on_truecolor(202, 202, 202).to_string();
                 }
-
-                // color pieces
-                /*if piece_char.is_uppercase() {
-                    piece_string = piece_string.red().to_string();
-                } else if piece_char.is_lowercase() {
-                    piece_string = piece_string.blue().to_string();
-                }*/
 
                 board_string += &piece_string;
             }
