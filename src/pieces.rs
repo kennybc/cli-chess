@@ -1,4 +1,3 @@
-mod shifts;
 mod pawn;
 
 #[derive(Debug, Copy, Clone, PartialEq)]

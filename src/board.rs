@@ -3,6 +3,9 @@ use colored::Colorize;
 use crate::moves;
 use crate::pieces;
 
+pub mod shift;
+pub mod split;
+
 pub struct Board {
     bitboards: [[u64; 6]; 2], // [player][piece]
 }
